@@ -164,42 +164,46 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			}
 
 			$razorpay_credentials = self::get_razorpay_credentials();
+			$order                = self::build_order( $payload, $event_id, $product );
+			$razorpay_order       = false;
 
-			if ( is_wp_error( $razorpay_credentials ) ) {
-				return $razorpay_credentials;
+			if ( false === $razorpay_credentials ) {
+				self::debug_log( 'Razorpay skipped — direct booking mode' );
+			} else {
+				$razorpay_order = self::create_razorpay_order( $order, $razorpay_credentials );
+
+				if ( is_wp_error( $razorpay_order ) ) {
+					return $razorpay_order;
+				}
+
+				$order->update_meta_data( '_gaticrew_razorpay_order_id', $razorpay_order['order_id'] );
+				$order->save();
 			}
-
-			$order          = self::build_order( $payload, $event_id, $product );
-			$razorpay_order = self::create_razorpay_order( $order, $razorpay_credentials );
-
-			if ( is_wp_error( $razorpay_order ) ) {
-				return $razorpay_order;
-			}
-
-			$order->update_meta_data( '_gaticrew_razorpay_order_id', $razorpay_order['order_id'] );
-			$order->save();
 
 			self::create_attendee_rows( $order, $payload, $event_id, $product_id );
 
 			$booking_id = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $payload['booking_id'] );
 			self::debug_log( 'Create-order completed. Order ID: ' . absint( $order->get_id() ) . ' Booking ID: ' . $booking_id );
 
-			$response = new WP_REST_Response(
-				array(
-					'success'    => true,
-					'order_id'   => absint( $order->get_id() ),
-					'booking_id' => $booking_id,
-					'amount'     => (float) wc_format_decimal( $order->get_total(), wc_get_price_decimals() ),
-					'currency'   => $razorpay_order['currency'],
-					'razorpay'   => array(
-						'key'      => $razorpay_order['key'],
-						'order_id' => $razorpay_order['order_id'],
-						'amount'   => absint( $razorpay_order['amount'] ),
-						'currency' => $razorpay_order['currency'],
-					),
-				),
-				200
+			$response_data = array(
+				'success'      => true,
+				'payment_mode' => false === $razorpay_order ? 'direct_booking' : 'razorpay',
+				'order_id'     => absint( $order->get_id() ),
+				'booking_id'   => $booking_id,
+				'amount'       => (float) wc_format_decimal( $order->get_total(), wc_get_price_decimals() ),
+				'currency'     => false === $razorpay_order ? get_woocommerce_currency() : $razorpay_order['currency'],
 			);
+
+			if ( false !== $razorpay_order ) {
+				$response_data['razorpay'] = array(
+					'key'      => $razorpay_order['key'],
+					'order_id' => $razorpay_order['order_id'],
+					'amount'   => absint( $razorpay_order['amount'] ),
+					'currency' => $razorpay_order['currency'],
+				);
+			}
+
+			$response = new WP_REST_Response( $response_data, 200 );
 
 			GatiCrew_Events_Bridge_CORS::add_response_headers( $response, 'POST, OPTIONS' );
 
@@ -264,20 +268,14 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	/**
 	 * Reads Razorpay credentials from wp-config.php constants or environment.
 	 *
-	 * @return array|WP_Error
+	 * @return array|false
 	 */
 	private static function get_razorpay_credentials() {
 		$key_id     = self::get_razorpay_config_value( self::RAZORPAY_KEY_ID_CONFIG );
 		$key_secret = self::get_razorpay_config_value( self::RAZORPAY_KEY_SECRET_CONFIG );
 
 		if ( '' === $key_id || '' === $key_secret ) {
-			self::debug_log( 'Razorpay config missing. Define RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.' );
-			return self::error_response(
-				'razorpay_config_missing',
-				__( 'Razorpay configuration is missing.', 'gaticrew-events-bridge' ),
-				array( 'razorpay' => __( 'Define RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in wp-config.php or environment variables.', 'gaticrew-events-bridge' ) ),
-				500
-			);
+			return false;
 		}
 
 		return array(
