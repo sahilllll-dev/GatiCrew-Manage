@@ -155,6 +155,14 @@ final class GatiCrew_Events_Bridge_Ticket_Assets {
 			$attendee_names[] = sanitize_text_field( $attendee['attendee_name'] );
 		}
 
+		// Frontend-created group bookings store one attendee per row; pull the
+		// whole booking group so the stored PDF reflects every ticket holder.
+		$group_names = self::get_group_attendee_names( $attendee );
+
+		if ( ! empty( $group_names ) ) {
+			$attendee_names = $group_names;
+		}
+
 		$ticket_quantity = isset( $attendee['quantity'] ) ? max( 1, absint( $attendee['quantity'] ) ) : ( isset( $attendee['ticket_quantity'] ) ? max( 1, absint( $attendee['ticket_quantity'] ) ) : 1 );
 
 		return array(
@@ -250,6 +258,45 @@ final class GatiCrew_Events_Bridge_Ticket_Assets {
 		if ( file_exists( $autoload ) ) {
 			require_once $autoload;
 		}
+	}
+
+	/**
+	 * Returns attendee names from every row in the same booking group.
+	 *
+	 * @param array $attendee Attendee booking row.
+	 * @return array
+	 */
+	private static function get_group_attendee_names( array $attendee ) {
+		if ( ! class_exists( 'GatiCrew_Events_Bridge_Attendees_Repository' ) ) {
+			return array();
+		}
+
+		$order_id   = isset( $attendee['order_id'] ) ? absint( $attendee['order_id'] ) : 0;
+		$booking_id = isset( $attendee['booking_id'] ) ? GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $attendee['booking_id'] ) : '';
+
+		if ( ! $order_id || '' === $booking_id ) {
+			return array();
+		}
+
+		$repository = new GatiCrew_Events_Bridge_Attendees_Repository();
+		$group      = $repository->get_group_by_order_booking( $order_id, $booking_id );
+		$names      = array();
+
+		foreach ( $group as $row ) {
+			$row_names = self::sanitize_attendee_names( isset( $row['attendee_names'] ) ? $row['attendee_names'] : array() );
+
+			if ( empty( $row_names ) && ! empty( $row['attendee_name'] ) ) {
+				$row_names[] = sanitize_text_field( $row['attendee_name'] );
+			}
+
+			foreach ( $row_names as $name ) {
+				if ( '' !== $name && ! in_array( $name, $names, true ) ) {
+					$names[] = $name;
+				}
+			}
+		}
+
+		return array_values( $names );
 	}
 
 	/**

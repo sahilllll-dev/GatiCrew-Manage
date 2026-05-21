@@ -152,13 +152,13 @@
 			return '';
 		}
 
-		routeMatch = value.match( /\/(?:checkin|gaticrew-checkin)\/((?:GCQR-[A-Za-z0-9]{8,32})|(?:GC-[0-9]{4}-[A-Za-z0-9]{4,32}))\/?/i );
+		routeMatch = value.match( /\/(?:checkin|gaticrew-checkin)\/((?:GCQR-[A-Za-z0-9]{8,32})|(?:GC-[0-9]{4}-[A-Za-z0-9]{4,32})|(?:[0-9]{1,20}))\/?/i );
 
 		if ( routeMatch && routeMatch[ 1 ] ) {
 			return routeMatch[ 1 ].toUpperCase();
 		}
 
-		directMatch = value.match( /^(?:GCQR-[A-Za-z0-9]{8,32}|GC-[0-9]{4}-[A-Za-z0-9]{4,32})$/i );
+		directMatch = value.match( /^(?:GCQR-[A-Za-z0-9]{8,32}|GC-[0-9]{4}-[A-Za-z0-9]{4,32}|[0-9]{1,20})$/i );
 
 		return directMatch ? value.toUpperCase() : '';
 	}

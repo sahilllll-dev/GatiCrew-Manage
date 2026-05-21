@@ -35,6 +35,7 @@ final class GatiCrew_Events_Bridge_Events_API {
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'add_cors_headers' ), 10, 4 );
+		error_log( '[GatiCrew Events Bridge] API boot hook registered: GET /wp-json/' . self::NAMESPACE . self::ROUTE ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- TODO: Remove after production route verification.
 	}
 
 	/**
@@ -52,6 +53,7 @@ final class GatiCrew_Events_Bridge_Events_API {
 				'permission_callback' => '__return_true',
 			)
 		);
+		error_log( '[GatiCrew Events Bridge] REST route registered: GET /wp-json/' . self::NAMESPACE . self::ROUTE ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- TODO: Remove after production route verification.
 	}
 
 	/**
@@ -70,10 +72,7 @@ final class GatiCrew_Events_Bridge_Events_API {
 			return $served;
 		}
 
-		header( 'Access-Control-Allow-Origin: ' . self::ALLOWED_ORIGIN );
-		header( 'Access-Control-Allow-Methods: GET, OPTIONS' );
-		header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
-		header( 'Vary: Origin', false );
+		GatiCrew_Events_Bridge_CORS::send_headers( 'GET, OPTIONS' );
 
 		return $served;
 	}
@@ -107,9 +106,7 @@ final class GatiCrew_Events_Bridge_Events_API {
 		}
 
 		$response = rest_ensure_response( $events );
-		$response->header( 'Access-Control-Allow-Origin', self::ALLOWED_ORIGIN );
-		$response->header( 'Access-Control-Allow-Methods', 'GET, OPTIONS' );
-		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce' );
+		GatiCrew_Events_Bridge_CORS::add_response_headers( $response, 'GET, OPTIONS' );
 		$response->header( 'Cache-Control', 'public, max-age=300' );
 
 		return $response;

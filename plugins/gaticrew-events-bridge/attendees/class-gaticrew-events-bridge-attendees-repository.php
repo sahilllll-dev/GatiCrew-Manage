@@ -48,7 +48,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 			return 0;
 		}
 
-		$existing_id = $this->get_id_by_order_booking( $prepared['order_id'], $prepared['booking_id'] );
+		$allow_group_duplicate = ! empty( $data['allow_group_duplicate'] );
+		$existing_id           = $allow_group_duplicate
+			? $this->get_id_by_order_booking_ticket_index( $prepared['order_id'], $prepared['booking_id'], $prepared['ticket_index'] )
+			: $this->get_id_by_order_booking( $prepared['order_id'], $prepared['booking_id'] );
 
 		if ( $existing_id ) {
 			return $existing_id;
@@ -82,7 +85,9 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 		);
 
 		if ( false === $inserted ) {
-			return $this->get_id_by_order_booking( $prepared['order_id'], $prepared['booking_id'] );
+			return $allow_group_duplicate
+				? $this->get_id_by_order_booking_ticket_index( $prepared['order_id'], $prepared['booking_id'], $prepared['ticket_index'] )
+				: $this->get_id_by_order_booking( $prepared['order_id'], $prepared['booking_id'] );
 		}
 
 		$attendee_id = absint( $wpdb->insert_id );
@@ -139,9 +144,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	 * @return bool
 	 */
 	public function exists_for_order_booking_ticket_index( $order_id, $booking_id, $ticket_index ) {
-		unset( $ticket_index );
-
-		return $this->exists_for_order_booking( $order_id, $booking_id );
+		return $this->get_id_by_order_booking_ticket_index( $order_id, $booking_id, $ticket_index ) > 0;
 	}
 
 	/**
@@ -207,7 +210,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	}
 
 	/**
-	 * Gets one attendee booking by QR token or booking ID.
+	 * Gets one attendee booking by QR token, booking ID, or attendee row ID.
 	 *
 	 * @param string $token QR token or booking ID.
 	 * @return array|null
@@ -219,6 +222,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 
 		if ( '' === $token ) {
 			return null;
+		}
+
+		if ( ctype_digit( $token ) ) {
+			return $this->get_by_id( absint( $token ) );
 		}
 
 		$table = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
@@ -240,7 +247,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	}
 
 	/**
-	 * Gets every row attached to a shared QR token or booking ID.
+	 * Gets every row attached to a shared QR token, booking ID, or attendee row ID.
 	 *
 	 * @param string $token QR token or booking ID.
 	 * @return array
@@ -252,6 +259,19 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 
 		if ( '' === $token ) {
 			return array();
+		}
+
+		if ( ctype_digit( $token ) ) {
+			$attendee = $this->get_by_id( absint( $token ) );
+
+			if ( empty( $attendee ) ) {
+				return array();
+			}
+
+			return $this->get_group_by_order_booking(
+				isset( $attendee['order_id'] ) ? absint( $attendee['order_id'] ) : 0,
+				isset( $attendee['booking_id'] ) ? $attendee['booking_id'] : ''
+			);
 		}
 
 		$table = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
@@ -512,7 +532,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	/**
 	 * Marks a booking checked in once.
 	 *
-	 * @param string $token QR token or booking ID.
+	 * @param string $token QR token, booking ID, or attendee row ID.
 	 * @return array
 	 */
 	public function mark_checked_in_by_token( $token ) {
@@ -549,27 +569,52 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 			);
 		}
 
-		$table   = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
-		$updated = $wpdb->query(
-			$wpdb->prepare(
-				"UPDATE {$table}
-				SET status = %s,
-					checked_in = 1,
-					checked_in_at = %s,
-					booking_status = %s,
-					qr_status = %s
-				WHERE (booking_id = %s OR qr_token = %s)
-					AND status <> %s
-					AND checked_in = 0",
-				self::STATUS_CHECKED_IN,
-				current_time( 'mysql' ),
-				self::STATUS_CHECKED_IN,
-				GatiCrew_Events_Bridge_QR_Tokens::STATUS_USED,
-				$token,
-				$token,
-				self::STATUS_CANCELLED
-			)
-		);
+		$table = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
+
+		if ( ctype_digit( $token ) ) {
+			$updated = $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$table}
+					SET status = %s,
+						checked_in = 1,
+						checked_in_at = %s,
+						booking_status = %s,
+						qr_status = %s
+					WHERE order_id = %d
+						AND booking_id = %s
+						AND status <> %s
+						AND checked_in = 0",
+					self::STATUS_CHECKED_IN,
+					current_time( 'mysql' ),
+					self::STATUS_CHECKED_IN,
+					GatiCrew_Events_Bridge_QR_Tokens::STATUS_USED,
+					isset( $attendee['order_id'] ) ? absint( $attendee['order_id'] ) : 0,
+					isset( $attendee['booking_id'] ) ? GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $attendee['booking_id'] ) : '',
+					self::STATUS_CANCELLED
+				)
+			);
+		} else {
+			$updated = $wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$table}
+					SET status = %s,
+						checked_in = 1,
+						checked_in_at = %s,
+						booking_status = %s,
+						qr_status = %s
+					WHERE (booking_id = %s OR qr_token = %s)
+						AND status <> %s
+						AND checked_in = 0",
+					self::STATUS_CHECKED_IN,
+					current_time( 'mysql' ),
+					self::STATUS_CHECKED_IN,
+					GatiCrew_Events_Bridge_QR_Tokens::STATUS_USED,
+					$token,
+					$token,
+					self::STATUS_CANCELLED
+				)
+			);
+		}
 
 		if ( $updated ) {
 			return array(
@@ -649,6 +694,39 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	}
 
 	/**
+	 * Gets attendee row ID by order/booking/ticket index.
+	 *
+	 * @param int    $order_id WooCommerce order ID.
+	 * @param string $booking_id Booking ID.
+	 * @param int    $ticket_index One-based ticket index.
+	 * @return int
+	 */
+	private function get_id_by_order_booking_ticket_index( $order_id, $booking_id, $ticket_index ) {
+		global $wpdb;
+
+		$order_id     = absint( $order_id );
+		$booking_id   = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $booking_id );
+		$ticket_index = max( 1, absint( $ticket_index ) );
+
+		if ( ! $order_id || '' === $booking_id ) {
+			return 0;
+		}
+
+		$table = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
+
+		return absint(
+			$wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE order_id = %d AND booking_id = %s AND ticket_index = %d LIMIT 1",
+					$order_id,
+					$booking_id,
+					$ticket_index
+				)
+			)
+		);
+	}
+
+	/**
 	 * Normalizes attendee data before insertion.
 	 *
 	 * @param array $data Raw attendee data.
@@ -672,6 +750,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 		$checked_in = self::STATUS_CHECKED_IN === $status || ! empty( $data['checked_in'] ) ? 1 : 0;
 		$booking_id = isset( $data['booking_id'] ) ? GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $data['booking_id'] ) : '';
 		$qr_status  = $this->get_qr_status_for_booking_status( $status );
+		$ticket_index = isset( $data['ticket_index'] ) ? max( 1, absint( $data['ticket_index'] ) ) : 1;
 
 		return array(
 			'booking_id'      => $booking_id,
@@ -688,7 +767,7 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 			'checked_in'      => $checked_in,
 			'checked_in_at'   => $checked_in ? current_time( 'mysql' ) : null,
 			'created_at'      => current_time( 'mysql' ),
-			'ticket_index'    => 1,
+			'ticket_index'    => $ticket_index,
 			'attendee_name'   => sanitize_text_field( reset( $attendee_names ) ),
 			'ticket_quantity' => $quantity,
 			'booking_status'  => $status,
@@ -848,10 +927,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 		$status     = $status ? $status : self::STATUS_CONFIRMED;
 		$checked_in = ! empty( $row['checked_in'] ) || self::STATUS_CHECKED_IN === $status;
 		$booking_id = isset( $row['booking_id'] ) ? GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $row['booking_id'] ) : '';
-		$qr_token   = $booking_id;
+		$qr_token   = ! empty( $row['qr_token'] ) ? GatiCrew_Events_Bridge_QR_Tokens::sanitize_token( $row['qr_token'] ) : '';
 
-		if ( '' === $qr_token && ! empty( $row['qr_token'] ) ) {
-			$qr_token = GatiCrew_Events_Bridge_QR_Tokens::sanitize_token( $row['qr_token'] );
+		if ( '' === $qr_token ) {
+			$qr_token = $booking_id;
 		}
 
 		$row['attendee_names']  = $names;

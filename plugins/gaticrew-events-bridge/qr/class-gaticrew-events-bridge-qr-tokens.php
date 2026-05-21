@@ -54,7 +54,7 @@ final class GatiCrew_Events_Bridge_QR_Tokens {
 	}
 
 	/**
-	 * Sanitizes and validates a QR token or booking ID.
+	 * Sanitizes and validates a QR token, booking ID, or attendee row ID.
 	 *
 	 * @param string $token Raw token.
 	 * @return string
@@ -63,7 +63,7 @@ final class GatiCrew_Events_Bridge_QR_Tokens {
 		$token = strtoupper( sanitize_text_field( (string) $token ) );
 		$token = preg_replace( '/[^A-Z0-9-]/', '', $token );
 
-		if ( ! is_string( $token ) || ! preg_match( '/^(GCQR-[A-Z0-9]{8,32}|GC-[0-9]{4}-[A-Z0-9]{4,32})$/', $token ) ) {
+		if ( ! is_string( $token ) || ! preg_match( '/^(GCQR-[A-Z0-9]{8,32}|GC-[0-9]{4}-[A-Z0-9]{4,32}|[0-9]{1,20})$/', $token ) ) {
 			return '';
 		}
 
