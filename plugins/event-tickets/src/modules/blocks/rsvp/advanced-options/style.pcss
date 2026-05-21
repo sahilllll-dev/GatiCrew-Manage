@@ -1,0 +1,61 @@
+.tribe-editor__rsvp__advanced-options {
+
+	.tribe-editor__accordion__row {
+		position: relative;
+
+		&.active {
+
+			&::before {
+				background-color: #e1e3e6;
+				content: "";
+				height: 1px;
+				left: 0;
+				position: absolute;
+				top: 10px;
+				width: calc(100% + 12px);
+			}
+		}
+
+		&.open {
+
+			.tribe-editor__accordion__row-content {
+				overflow: visible;
+			}
+		}
+	}
+}
+
+.tribe-editor__rsvp__advanced-options-header {
+	align-items: center;
+	background-color: #f8f9f9 !important;
+	border: none;
+	display: flex;
+	padding: 0;
+	position: relative;
+}
+
+svg.tribe-editor__rsvp__advanced-options-header-icon {
+	fill: #8d949b;
+	margin-left: -5px;
+	margin-right: 3px;
+
+	.tribe-editor__accordion__row.active & {
+		transform: rotate(180deg) translateX(-2px);
+	}
+
+	.tribe-editor__rsvp-container--disabled & {
+		fill: #aeb4bb;
+	}
+}
+
+.tribe-editor__rsvp__advanced-options-header-text {
+	color: #000;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 18px;
+	padding-right: 10px;
+
+	.tribe-editor__rsvp-container--disabled & {
+		color: #aeb4bb;
+	}
+}

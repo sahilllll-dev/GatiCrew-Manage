@@ -1,0 +1,56 @@
+.tribe-editor__container-panel {
+	display: flex;
+
+	&--rsvp {
+		border: none;
+	}
+
+	&--ticket {
+		flex-wrap: wrap;
+	}
+}
+
+.tribe-editor__container-panel__icon {
+	flex: none;
+	text-align: center;
+
+	.tribe-editor__container-panel--rsvp & {
+		padding: 25px 20px 20px;
+		width: 100px;
+	}
+
+	.tribe-editor__container-panel--ticket & {
+		background-color: #f8f9f9;
+		width: 100px;
+
+		svg {
+			margin: 25px 4px;
+		}
+	}
+}
+
+.tribe-editor__container-panel__header-content-wrapper {
+	flex: auto;
+}
+
+.tribe-editor__container-panel__header {
+
+	.tribe-editor__container-panel--ticket & {
+		flex: none;
+		width: 100%;
+	}
+}
+
+.tribe-editor__container-panel__content {
+
+	.tribe-editor__container-panel--rsvp & {
+		padding: var(--tec-spacer-5) var(--tec-spacer-3) var(--tec-spacer-2) var(--tec-spacer-3);
+	}
+
+	.tribe-editor__container-panel--ticket & {
+		background-color: var(--tec-color-background-secondary);
+		flex: none;
+		padding: var(--tec-spacer-5) var(--tec-spacer-4) var(--tec-spacer-2) var(--tec-spacer-4);
+		width: calc(100% - 40px);
+	}
+}

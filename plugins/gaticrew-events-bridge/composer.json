@@ -1,0 +1,12 @@
+{
+  "name": "gaticrew/gaticrew-events-bridge",
+  "description": "GatiCrew Events Bridge PDF ticket support.",
+  "type": "wordpress-plugin",
+  "require": {
+    "dompdf/dompdf": "^3.1"
+  },
+  "autoload": {
+    "psr-4": {}
+  }
+}
+

@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Move posts reducer should fetch choices 1`] = `
+{
+  "isFetching": true,
+  "posts": {},
+}
+`;
+
+exports[`Move posts reducer should fetch choices with error 1`] = `
+{
+  "isFetching": false,
+  "posts": {},
+}
+`;
+
+exports[`Move posts reducer should fetch choices with success 1`] = `
+{
+  "isFetching": false,
+  "posts": {
+    "a": 1,
+  },
+}
+`;
+
+exports[`Move posts reducer should set data 1`] = `
+{
+  "isFetching": false,
+  "posts": {},
+}
+`;

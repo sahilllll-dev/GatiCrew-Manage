@@ -1,0 +1,40 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RSVP block declaration register the RSVP block 1`] = `
+{
+  "attributes": {
+    "goingCount": {
+      "meta": "_tribe_ticket_going_count",
+      "source": "meta",
+      "type": "integer",
+    },
+    "headerImageId": {
+      "meta": "_tribe_ticket_header",
+      "source": "meta",
+      "type": "integer",
+    },
+    "notGoingCount": {
+      "meta": "_tribe_ticket_not_going_count",
+      "source": "meta",
+      "type": "integer",
+    },
+  },
+  "category": "tribe-tickets",
+  "description": "Find out who is planning to attend!",
+  "edit": [Function],
+  "icon": <UNDEFINED />,
+  "id": "rsvp",
+  "keywords": [
+    "event",
+    "events-gutenberg",
+    "tribe",
+  ],
+  "save": [Function],
+  "supports": {
+    "customClassName": false,
+    "html": false,
+    "multiple": false,
+  },
+  "title": "RSVP",
+}
+`;

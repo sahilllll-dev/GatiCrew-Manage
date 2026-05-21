@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Logs
+*.log
+debug.log
+
+# Node
+node_modules/
+
+# Vendor
+vendor/
+
+# Cache
+cache/
+upgrade/
+
+# Uploads (IMPORTANT)
+uploads/
+
+# Env
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+*.tmp

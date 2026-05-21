@@ -1,0 +1,291 @@
+.gaticrew-event-confirmation {
+	margin: 32px 0;
+	padding: 28px;
+	border: 1px solid #d9e0dc;
+	background: #ffffff;
+	box-shadow: 0 14px 40px rgba( 17, 24, 39, 0.08 );
+}
+
+.gaticrew-event-confirmation__hero {
+	margin-bottom: 24px;
+	padding-bottom: 18px;
+	border-bottom: 1px solid #e5e7eb;
+}
+
+.gaticrew-event-confirmation__eyebrow {
+	margin: 0 0 6px;
+	color: #5f6f67;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: uppercase;
+}
+
+.gaticrew-event-confirmation h2 {
+	margin: 0;
+	font-size: 30px;
+	line-height: 1.2;
+}
+
+.gaticrew-event-confirmation h3 {
+	margin-top: 0;
+}
+
+.gaticrew-event-confirmation__ticket {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 18px;
+	align-items: start;
+	margin-bottom: 22px;
+}
+
+.gaticrew-event-confirmation__details {
+	display: grid;
+	grid-column: 1;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+	margin: 0;
+}
+
+.gaticrew-event-confirmation__ticket-actions {
+	grid-column: 1 / -1;
+	margin: 0;
+}
+
+.gaticrew-event-confirmation__detail {
+	padding: 14px;
+	border: 1px solid #e5e7eb;
+	background: #f8faf9;
+}
+
+.gaticrew-event-confirmation__detail--wide {
+	grid-column: 1 / -1;
+}
+
+.gaticrew-event-confirmation__qr {
+	grid-column: 2;
+	grid-row: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 14px;
+	border: 1px solid #e5e7eb;
+	background: #fff;
+	text-align: center;
+}
+
+.gaticrew-event-confirmation__qr img {
+	display: block;
+	width: 168px;
+	height: 168px;
+}
+
+.gaticrew-event-confirmation__qr span {
+	color: #5f6f67;
+	font-size: 12px;
+}
+
+.gaticrew-event-confirmation__details dt {
+	margin: 0 0 3px;
+	color: #5f6f67;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.gaticrew-event-confirmation__details dd {
+	margin: 0;
+}
+
+.gaticrew-event-confirmation__attendees,
+.gaticrew-checkin__attendees {
+	margin: 0;
+	padding-left: 20px;
+}
+
+.gaticrew-event-confirmation__attendees li + li,
+.gaticrew-checkin__attendees li + li {
+	margin-top: 4px;
+}
+
+.gaticrew-event-confirmation__panel {
+	margin-top: 20px;
+	padding: 18px;
+	border: 1px solid #e5e7eb;
+	background: #ffffff;
+}
+
+.gaticrew-event-confirmation__instructions ul {
+	margin-bottom: 0;
+}
+
+.gaticrew-event-confirmation__qr-note {
+	border: 1px dashed #9ca3af;
+	text-align: center;
+}
+
+.gaticrew-event-confirmation__qr-note p {
+	margin: 6px 0 0;
+}
+
+.gaticrew-event-confirmation__actions {
+	margin: 24px 0 0;
+}
+
+.gaticrew-event-confirmation__button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	padding-right: 18px;
+	padding-left: 18px;
+}
+
+@media (max-width: 640px) {
+	.gaticrew-event-confirmation {
+		padding: 20px;
+	}
+
+	.gaticrew-event-confirmation__details {
+		grid-template-columns: 1fr;
+	}
+
+	.gaticrew-event-confirmation__ticket {
+		grid-template-columns: 1fr;
+	}
+
+	.gaticrew-event-confirmation__qr {
+		grid-column: auto;
+		grid-row: auto;
+	}
+}
+
+.gaticrew-checkin {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 24px;
+	background: #f3f6f4;
+}
+
+.gaticrew-checkin__card {
+	width: min(680px, 100%);
+	padding: 28px;
+	border: 1px solid #d9e0dc;
+	background: #fff;
+	box-shadow: 0 14px 40px rgba(17, 24, 39, 0.08);
+}
+
+.gaticrew-checkin__eyebrow {
+	margin: 0 0 6px;
+	color: #5f6f67;
+	font-size: 13px;
+	font-weight: 700;
+	letter-spacing: 0;
+	text-transform: uppercase;
+}
+
+.gaticrew-checkin h1 {
+	margin: 0 0 22px;
+	font-size: 30px;
+	line-height: 1.2;
+}
+
+.gaticrew-checkin__notice,
+.gaticrew-checkin__result {
+	margin: 0 0 18px;
+	padding: 12px 14px;
+	border: 1px solid #dcdcde;
+	background: #f8faf9;
+	font-weight: 700;
+}
+
+.gaticrew-checkin__notice--checked_in,
+.gaticrew-checkin__notice--already_checked_in,
+.gaticrew-checkin__result--used {
+	border-color: #b8e6c5;
+	background: #edfaef;
+	color: #0a6b2b;
+}
+
+.gaticrew-checkin__result--cancelled,
+.gaticrew-checkin__result--invalid,
+.gaticrew-checkin__notice--invalid_token,
+.gaticrew-checkin__notice--rate_limited,
+.gaticrew-checkin__notice--invalid_nonce {
+	border-color: #f2c6cc;
+	background: #fcf0f1;
+	color: #b32d2e;
+}
+
+.gaticrew-checkin__details {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+	margin: 0 0 20px;
+}
+
+.gaticrew-checkin__details div {
+	padding: 14px;
+	border: 1px solid #e5e7eb;
+	background: #f8faf9;
+}
+
+.gaticrew-checkin__details dt {
+	margin: 0 0 3px;
+	color: #5f6f67;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.gaticrew-checkin__details dd {
+	margin: 0;
+}
+
+.gaticrew-checkin__button {
+	min-height: 44px;
+	padding-right: 18px;
+	padding-left: 18px;
+}
+
+@media (max-width: 640px) {
+	.gaticrew-checkin__card {
+		padding: 20px;
+	}
+
+	.gaticrew-checkin__details {
+		grid-template-columns: 1fr;
+	}
+}
+
+.gaticrew-checkout-attendees {
+	margin: 24px 0;
+	padding: 18px;
+	border: 1px solid #e5e7eb;
+	background: #f8faf9;
+}
+
+.gaticrew-checkout-attendees h3 {
+	margin-top: 0;
+}
+
+.gaticrew-checkout-attendees__group + .gaticrew-checkout-attendees__group {
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.gaticrew-checkout-attendees__event {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+	align-items: center;
+	margin: 0 0 12px;
+}
+
+.gaticrew-checkout-attendees__event span {
+	color: #5f6f67;
+	font-size: 13px;
+	font-weight: 700;
+}

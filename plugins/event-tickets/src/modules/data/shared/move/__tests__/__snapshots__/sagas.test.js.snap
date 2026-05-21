@@ -1,0 +1,601 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Move Sagas _fetch should error 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      {
+        "a": 1,
+        "check": undefined,
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas _fetch should error 2`] = `undefined`;
+
+exports[`Move Sagas _fetch should fetch successfully 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      undefined,
+      {
+        "body": "a=1&check=undefined",
+        "credentials": "include",
+        "headers": {
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        "method": "POST",
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas _fetch should fetch successfully 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [],
+    "context": {
+      "json": [Function],
+    },
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas createBody 1`] = `"a=1&b=2&c=okay%26something"`;
+
+exports[`Move Sagas fetchPostChoices should error 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/FETCH_POST_CHOICES",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostChoices should error 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "error": "error",
+      "type": "@@MT/TICKETS/FETCH_POST_CHOICES_ERROR",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostChoices should fetch successfully 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/FETCH_POST_CHOICES",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostChoices should fetch successfully 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      {
+        "action": "move_tickets_get_post_choices",
+        "ignore": 1,
+        "post_type": "all",
+        "search_terms": "cool",
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostChoices should fetch successfully 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "data": {},
+      "type": "@@MT/TICKETS/FETCH_POST_CHOICES_SUCCESS",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostTypes should error 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/FETCH_POST_TYPES",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostTypes should error 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "error": "error",
+      "type": "@@MT/TICKETS/FETCH_POST_TYPES_ERROR",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostTypes should fetch successfully 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/FETCH_POST_TYPES",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostTypes should fetch successfully 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      {
+        "action": "move_tickets_get_post_types",
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas fetchPostTypes should fetch successfully 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "data": {},
+      "type": "@@MT/TICKETS/FETCH_POST_TYPES_SUCCESS",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas getCurrentPostId 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [],
+    "context": {
+      "getCurrentPostId": [Function],
+    },
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas getPostChoices 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "ALL": {
+    "ignore": {
+      "@@redux-saga/IO": true,
+      "CALL": {
+        "args": [],
+        "context": null,
+        "fn": [Function],
+      },
+    },
+    "post_type": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+    "search_terms": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+  },
+}
+`;
+
+exports[`Move Sagas getPostChoices 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      {
+        "ignore": 2,
+        "post_type": 1,
+        "search_terms": "",
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas initialize 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "ALL": [
+    {
+      "@@redux-saga/IO": true,
+      "CALL": {
+        "args": [],
+        "context": null,
+        "fn": [Function],
+      },
+    },
+    {
+      "@@redux-saga/IO": true,
+      "CALL": {
+        "args": [],
+        "context": null,
+        "fn": [Function],
+      },
+    },
+  ],
+}
+`;
+
+exports[`Move Sagas moveTicket should error 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/MOVE_TICKET",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas moveTicket should error 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "error": "error",
+      "type": "@@MT/TICKETS/MOVE_TICKET_ERROR",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas moveTicket should fetch successfully 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/MOVE_TICKET",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas moveTicket should fetch successfully 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      {
+        "action": "move_ticket_type",
+        "src_post_id": 1,
+        "target_post_id": 3,
+        "ticket_type_id": 2,
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas moveTicket should fetch successfully 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "data": {},
+      "type": "@@MT/TICKETS/MOVE_TICKET_SUCCESS",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas onModalChange should get post choices 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [
+      500,
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas onModalChange should get post choices 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "CALL": {
+    "args": [],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas onModalHide 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/RESET_MODAL_DATA",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas onModalShow 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "payload": {},
+      "type": "@@MT/TICKETS/SET_MODAL_DATA",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should hide modal on success 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "ALL": {
+    "src_post_id": {
+      "@@redux-saga/IO": true,
+      "CALL": {
+        "args": [],
+        "context": null,
+        "fn": [Function],
+      },
+    },
+    "target_post_id": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+    "ticket_type_id": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should hide modal on success 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      {
+        "src_post_id": 1,
+        "target_post_id": 3,
+        "ticket_type_id": 2,
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should hide modal on success 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "TAKE": {
+    "pattern": [
+      "@@MT/TICKETS/MOVE_TICKET_SUCCESS",
+      "@@MT/TICKETS/MOVE_TICKET_ERROR",
+    ],
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should hide modal on success 4`] = `
+{
+  "@@redux-saga/IO": true,
+  "PUT": {
+    "action": {
+      "type": "@@MT/TICKETS/HIDE_MODAL",
+    },
+    "channel": null,
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should not hide modal on error 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "ALL": {
+    "src_post_id": {
+      "@@redux-saga/IO": true,
+      "CALL": {
+        "args": [],
+        "context": null,
+        "fn": [Function],
+      },
+    },
+    "target_post_id": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+    "ticket_type_id": {
+      "@@redux-saga/IO": true,
+      "SELECT": {
+        "args": [],
+        "selector": [Function],
+      },
+    },
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should not hide modal on error 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      {
+        "src_post_id": 1,
+        "target_post_id": 3,
+        "ticket_type_id": 2,
+      },
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should not hide modal on error 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "TAKE": {
+    "pattern": [
+      "@@MT/TICKETS/MOVE_TICKET_SUCCESS",
+      "@@MT/TICKETS/MOVE_TICKET_ERROR",
+    ],
+  },
+}
+`;
+
+exports[`Move Sagas onModalSubmit should not hide modal on error 4`] = `undefined`;
+
+exports[`Move Sagas watchers 1`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      [
+        "@@MT/TICKETS/INITIALIZE_MODAL",
+      ],
+      [Function],
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas watchers 2`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      [
+        "@@MT/TICKETS/SET_MODAL_DATA",
+      ],
+      [Function],
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas watchers 3`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      [
+        "@@MT/TICKETS/SUBMIT_MODAL",
+      ],
+      [Function],
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas watchers 4`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      [
+        "@@MT/TICKETS/SHOW_MODAL",
+      ],
+      [Function],
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
+
+exports[`Move Sagas watchers 5`] = `
+{
+  "@@redux-saga/IO": true,
+  "FORK": {
+    "args": [
+      [
+        "@@MT/TICKETS/HIDE_MODAL",
+      ],
+      [Function],
+    ],
+    "context": null,
+    "fn": [Function],
+  },
+}
+`;
