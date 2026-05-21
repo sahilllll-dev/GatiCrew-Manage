@@ -27,7 +27,6 @@ require_once GATICREW_EVENTS_BRIDGE_PATH . 'orders/class-gaticrew-events-bridge-
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-attendees-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'scanner/class-gaticrew-events-bridge-scanner-admin.php';
-require_once GATICREW_EVENTS_BRIDGE_PATH . 'api/class-gaticrew-events-bridge-rest-controller.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'api/class-gaticrew-events-bridge-checkin-rest-controller.php';
 
 final class GatiCrew_Events_Bridge {
@@ -62,13 +61,6 @@ final class GatiCrew_Events_Bridge {
 	 * @var GatiCrew_Events_Bridge_Admin
 	 */
 	private $admin;
-
-	/**
-	 * REST controller.
-	 *
-	 * @var GatiCrew_Events_Bridge_REST_Controller
-	 */
-	private $rest_controller;
 
 	/**
 	 * Live check-in REST controller.
@@ -152,7 +144,6 @@ final class GatiCrew_Events_Bridge {
 
 		$this->admin_permissions       = new GatiCrew_Events_Bridge_Admin_Permissions();
 		$this->admin                   = new GatiCrew_Events_Bridge_Admin();
-		$this->rest_controller         = new GatiCrew_Events_Bridge_REST_Controller();
 		$this->checkin_rest_controller = new GatiCrew_Events_Bridge_Checkin_REST_Controller();
 		$this->order_manager           = new GatiCrew_Events_Bridge_Order_Manager();
 		$this->attendees_admin         = new GatiCrew_Events_Bridge_Attendees_Admin();
@@ -163,7 +154,6 @@ final class GatiCrew_Events_Bridge {
 
 		$this->admin_permissions->init();
 		$this->admin->init();
-		$this->rest_controller->init();
 		$this->checkin_rest_controller->init();
 		$this->order_manager->init();
 		$this->attendees_admin->init();

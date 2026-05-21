@@ -27,3 +27,11 @@ uploads/
 
 # Temp
 *.tmp
+
+# Backup plugins
+wpvividbackups/
+ai1wm-backups/
+updraft/
+
+# WordPress uploads cache
+uploads/cache/
