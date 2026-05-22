@@ -370,6 +370,10 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			$real_qr_url   = ! empty( $real_attendee['attendee_qr_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_url'] ) : '';
 			$real_qr_image = ! empty( $real_attendee['attendee_qr_image_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_image_url'] ) : '';
 
+			if ( $real_id ) {
+				self::persist_real_attendee_link_to_row( $attendee, $real_attendee );
+			}
+
 			$formatted[] = array(
 				'attendee_id'               => $real_id,
 				'gaticrew_attendee_id'      => $gaticrew_attendee_id,
@@ -404,7 +408,7 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	private static function get_event_tickets_attendees( WC_Order $order, $event_id, array $booking_attendees ) {
 		$booking_id = self::get_booking_id_from_attendees( $booking_attendees, $order );
 		$order_id   = absint( $order->get_id() );
-		$ids        = array();
+		$ids        = self::get_stored_event_tickets_attendee_ids( $booking_attendees );
 
 		self::debug_log(
 			'Lookup start: ' . wp_json_encode(
@@ -416,6 +420,7 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 				)
 			)
 		);
+		self::debug_event_tickets_candidate_posts( 'stored_tec_attendee_ids', $ids );
 
 		if ( '' !== $booking_id ) {
 			$ids = array_merge(
@@ -452,7 +457,79 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		self::debug_log( 'Resolved Event Tickets attendee IDs for booking ' . $booking_id . ': ' . wp_json_encode( $ids ) );
 		self::debug_event_tickets_candidate_posts( 'final', $ids );
 
-		return self::normalize_event_tickets_attendees( $ids );
+		return self::merge_stored_tec_data(
+			self::normalize_event_tickets_attendees( $ids ),
+			$booking_attendees
+		);
+	}
+
+	/**
+	 * Reads already-persisted TEC attendee post IDs from custom attendee rows.
+	 *
+	 * @param array $booking_attendees GatiCrew attendee rows.
+	 * @return array
+	 */
+	private static function get_stored_event_tickets_attendee_ids( array $booking_attendees ) {
+		$ids        = array();
+		$post_types = self::get_event_tickets_attendee_post_types();
+
+		foreach ( $booking_attendees as $attendee ) {
+			$tec_id = ! empty( $attendee['tec_attendee_post_id'] ) ? absint( $attendee['tec_attendee_post_id'] ) : 0;
+
+			if ( ! $tec_id ) {
+				continue;
+			}
+
+			$post = get_post( $tec_id );
+
+			if ( $post instanceof WP_Post && in_array( $post->post_type, $post_types, true ) && 'trash' !== $post->post_status ) {
+				$ids[] = $tec_id;
+			}
+		}
+
+		return array_values( array_unique( $ids ) );
+	}
+
+	/**
+	 * Uses persisted TEC data as a fallback after loading the official post/meta.
+	 *
+	 * @param array $event_tickets_attendees Normalized TEC attendees.
+	 * @param array $booking_attendees GatiCrew attendee rows.
+	 * @return array
+	 */
+	private static function merge_stored_tec_data( array $event_tickets_attendees, array $booking_attendees ) {
+		$stored = array();
+
+		foreach ( $booking_attendees as $attendee ) {
+			$tec_id = ! empty( $attendee['tec_attendee_post_id'] ) ? absint( $attendee['tec_attendee_post_id'] ) : 0;
+
+			if ( ! $tec_id ) {
+				continue;
+			}
+
+			$stored[ $tec_id ] = array(
+				'attendee_qr_token'     => ! empty( $attendee['tec_security_code'] ) ? sanitize_text_field( $attendee['tec_security_code'] ) : '',
+				'attendee_qr_url'       => ! empty( $attendee['tec_qr_url'] ) ? esc_url_raw( $attendee['tec_qr_url'] ) : '',
+				'attendee_qr_image_url' => ! empty( $attendee['tec_qr_image_url'] ) ? esc_url_raw( $attendee['tec_qr_image_url'] ) : '',
+			);
+		}
+
+		foreach ( $event_tickets_attendees as &$event_tickets_attendee ) {
+			$tec_id = ! empty( $event_tickets_attendee['attendee_id'] ) ? absint( $event_tickets_attendee['attendee_id'] ) : 0;
+
+			if ( ! $tec_id || empty( $stored[ $tec_id ] ) ) {
+				continue;
+			}
+
+			foreach ( $stored[ $tec_id ] as $key => $value ) {
+				if ( empty( $event_tickets_attendee[ $key ] ) && '' !== (string) $value ) {
+					$event_tickets_attendee[ $key ] = $value;
+				}
+			}
+		}
+		unset( $event_tickets_attendee );
+
+		return $event_tickets_attendees;
 	}
 
 	/**
@@ -1042,6 +1119,40 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		}
 
 		return array();
+	}
+
+	/**
+	 * Backfills the custom attendee row with the matched official TEC attendee.
+	 *
+	 * @param array $booking_attendee GatiCrew attendee row.
+	 * @param array $real_attendee Normalized Event Tickets attendee data.
+	 * @return void
+	 */
+	private static function persist_real_attendee_link_to_row( array $booking_attendee, array $real_attendee ) {
+		if ( ! class_exists( 'GatiCrew_Events_Bridge_Attendees_Repository' ) || empty( $real_attendee['attendee_id'] ) ) {
+			return;
+		}
+
+		$order_id     = ! empty( $booking_attendee['order_id'] ) ? absint( $booking_attendee['order_id'] ) : 0;
+		$booking_id   = ! empty( $booking_attendee['booking_id'] ) ? GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $booking_attendee['booking_id'] ) : '';
+		$ticket_index = ! empty( $booking_attendee['ticket_index'] ) ? max( 1, absint( $booking_attendee['ticket_index'] ) ) : 1;
+
+		if ( ! $order_id || '' === $booking_id ) {
+			return;
+		}
+
+		$repository = new GatiCrew_Events_Bridge_Attendees_Repository();
+		$repository->update_tec_ticket_data(
+			$order_id,
+			$booking_id,
+			$ticket_index,
+			array(
+				'tec_attendee_post_id' => absint( $real_attendee['attendee_id'] ),
+				'tec_security_code'    => ! empty( $real_attendee['attendee_qr_token'] ) ? sanitize_text_field( $real_attendee['attendee_qr_token'] ) : '',
+				'tec_qr_url'           => ! empty( $real_attendee['attendee_qr_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_url'] ) : '',
+				'tec_qr_image_url'     => ! empty( $real_attendee['attendee_qr_image_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_image_url'] ) : '',
+			)
+		);
 	}
 
 	/**

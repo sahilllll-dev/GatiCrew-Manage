@@ -81,6 +81,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 				'%s',
 				'%s',
 				'%s',
+				'%d',
+				'%s',
+				'%s',
+				'%s',
 			)
 		);
 
@@ -289,6 +293,47 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 		);
 
 		return $this->normalize_rows( $rows );
+	}
+
+	/**
+	 * Stores the official Event Tickets attendee link for one GatiCrew row.
+	 *
+	 * These values are copied from TEC attendee post/meta so the booking API can
+	 * load the authoritative QR ticket without guessing across attendee posts.
+	 *
+	 * @param int    $order_id WooCommerce order ID.
+	 * @param string $booking_id GatiCrew booking ID.
+	 * @param int    $ticket_index One-based ticket index.
+	 * @param array  $data TEC attendee data.
+	 * @return int Updated GatiCrew attendee row ID.
+	 */
+	public function update_tec_ticket_data( $order_id, $booking_id, $ticket_index, array $data ) {
+		global $wpdb;
+
+		$row_id       = $this->get_id_by_order_booking_ticket_index( $order_id, $booking_id, $ticket_index );
+		$tec_id       = isset( $data['tec_attendee_post_id'] ) ? absint( $data['tec_attendee_post_id'] ) : 0;
+		$security     = isset( $data['tec_security_code'] ) ? sanitize_text_field( $data['tec_security_code'] ) : '';
+		$qr_url       = isset( $data['tec_qr_url'] ) ? esc_url_raw( $data['tec_qr_url'] ) : '';
+		$qr_image_url = isset( $data['tec_qr_image_url'] ) ? esc_url_raw( $data['tec_qr_image_url'] ) : '';
+
+		if ( ! $row_id || ! $tec_id ) {
+			return 0;
+		}
+
+		$updated = $wpdb->update(
+			GatiCrew_Events_Bridge_Schema::get_attendees_table_name(),
+			array(
+				'tec_attendee_post_id' => $tec_id,
+				'tec_security_code'    => $security,
+				'tec_qr_url'           => $qr_url,
+				'tec_qr_image_url'     => $qr_image_url,
+			),
+			array( 'id' => $row_id ),
+			array( '%d', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		return false === $updated ? 0 : $row_id;
 	}
 
 	/**
@@ -773,6 +818,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 			'booking_status'  => $status,
 			'qr_token'        => $booking_id,
 			'qr_status'       => $qr_status,
+			'tec_attendee_post_id' => isset( $data['tec_attendee_post_id'] ) ? absint( $data['tec_attendee_post_id'] ) : 0,
+			'tec_security_code'    => isset( $data['tec_security_code'] ) ? sanitize_text_field( $data['tec_security_code'] ) : '',
+			'tec_qr_url'           => ! empty( $data['tec_qr_url'] ) ? esc_url_raw( $data['tec_qr_url'] ) : '',
+			'tec_qr_image_url'     => ! empty( $data['tec_qr_image_url'] ) ? esc_url_raw( $data['tec_qr_image_url'] ) : '',
 		);
 	}
 
@@ -943,6 +992,10 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 		$row['checked_in']      = $checked_in ? 1 : 0;
 		$row['qr_token']        = $qr_token;
 		$row['qr_status']       = $checked_in ? GatiCrew_Events_Bridge_QR_Tokens::STATUS_USED : $this->get_qr_status_for_booking_status( $status );
+		$row['tec_attendee_post_id'] = isset( $row['tec_attendee_post_id'] ) ? absint( $row['tec_attendee_post_id'] ) : 0;
+		$row['tec_security_code']    = isset( $row['tec_security_code'] ) ? sanitize_text_field( $row['tec_security_code'] ) : '';
+		$row['tec_qr_url']           = ! empty( $row['tec_qr_url'] ) ? esc_url_raw( $row['tec_qr_url'] ) : '';
+		$row['tec_qr_image_url']     = ! empty( $row['tec_qr_image_url'] ) ? esc_url_raw( $row['tec_qr_image_url'] ) : '';
 
 		return $row;
 	}

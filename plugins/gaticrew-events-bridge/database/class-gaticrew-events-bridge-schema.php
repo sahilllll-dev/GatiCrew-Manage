@@ -11,7 +11,7 @@ final class GatiCrew_Events_Bridge_Schema {
 	/**
 	 * Attendee table version for future migrations.
 	 */
-	const ATTENDEES_TABLE_VERSION = '2.0.0';
+	const ATTENDEES_TABLE_VERSION = '2.1.0';
 
 	/**
 	 * Returns the attendees table name with the active WordPress prefix.
@@ -63,6 +63,10 @@ final class GatiCrew_Events_Bridge_Schema {
 			booking_status varchar(40) NOT NULL DEFAULT 'confirmed',
 			qr_token varchar(64) DEFAULT NULL,
 			qr_status varchar(40) NOT NULL DEFAULT 'active',
+			tec_attendee_post_id bigint(20) unsigned NOT NULL DEFAULT 0,
+			tec_security_code varchar(191) NOT NULL DEFAULT '',
+			tec_qr_url text NULL,
+			tec_qr_image_url text NULL,
 			PRIMARY KEY  (id),
 			KEY booking_id (booking_id),
 			KEY order_id (order_id),
@@ -74,6 +78,8 @@ final class GatiCrew_Events_Bridge_Schema {
 			KEY booking_status (booking_status),
 			KEY qr_token (qr_token),
 			KEY qr_status (qr_status),
+			KEY tec_attendee_post_id (tec_attendee_post_id),
+			KEY tec_security_code (tec_security_code),
 			KEY checked_in (checked_in),
 			KEY created_at (created_at)
 		) {$charset_collate};";

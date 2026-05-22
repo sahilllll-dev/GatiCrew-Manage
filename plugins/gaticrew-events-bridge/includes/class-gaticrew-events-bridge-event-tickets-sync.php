@@ -61,6 +61,7 @@ final class GatiCrew_Events_Bridge_Event_Tickets_Sync {
 		$existing = self::get_existing_attendee_ids( $order_id, $booking_id, $event_id );
 
 		if ( count( $existing ) >= $quantity ) {
+			self::sync_existing_attendee_rows( array_slice( $existing, 0, $quantity ), $order, $booking_id, $event_id );
 			self::debug_log( 'Event Tickets attendees already exist for order ' . $order_id . ', booking ' . $booking_id );
 			return array_slice( $existing, 0, $quantity );
 		}
@@ -79,6 +80,7 @@ final class GatiCrew_Events_Bridge_Event_Tickets_Sync {
 			$existing_id = self::get_existing_attendee_id_for_index( $order_id, $booking_id, $index );
 
 			if ( $existing_id ) {
+				self::persist_tec_attendee_to_row( $existing_id, $order, $booking_id, $index, $event_id );
 				$created[] = $existing_id;
 				continue;
 			}
@@ -97,6 +99,7 @@ final class GatiCrew_Events_Bridge_Event_Tickets_Sync {
 			}
 
 			self::tag_attendee( $attendee->ID, $order, $booking_id, $event_id, $product_id, $index, $name, $customer );
+			self::persist_tec_attendee_to_row( $attendee->ID, $order, $booking_id, $index, $event_id );
 			$created[] = absint( $attendee->ID );
 		}
 
@@ -299,6 +302,162 @@ final class GatiCrew_Events_Bridge_Event_Tickets_Sync {
 		update_post_meta( $attendee_id, self::META_CUSTOMER_PHONE, sanitize_text_field( $customer['phone'] ) );
 		update_post_meta( $attendee_id, '_tribe_tickets_full_name', sanitize_text_field( $attendee_name ) );
 		update_post_meta( $attendee_id, '_tribe_tickets_email', sanitize_email( $customer['email'] ) );
+	}
+
+	/**
+	 * Backfills official TEC attendee linkage for existing synced attendees.
+	 *
+	 * @param array    $attendee_ids TEC attendee post IDs.
+	 * @param WC_Order $order WooCommerce order.
+	 * @param string   $booking_id Booking ID.
+	 * @param int      $event_id Event post ID.
+	 * @return void
+	 */
+	private static function sync_existing_attendee_rows( array $attendee_ids, WC_Order $order, $booking_id, $event_id ) {
+		foreach ( array_values( array_unique( array_map( 'absint', $attendee_ids ) ) ) as $index => $attendee_id ) {
+			$ticket_index = absint( get_post_meta( $attendee_id, self::META_TICKET_INDEX, true ) );
+			$ticket_index = $ticket_index ? $ticket_index : $index + 1;
+
+			self::persist_tec_attendee_to_row( $attendee_id, $order, $booking_id, $ticket_index, $event_id );
+		}
+	}
+
+	/**
+	 * Saves official Event Tickets attendee QR data onto the matching bridge row.
+	 *
+	 * @param int      $attendee_id TEC attendee post ID.
+	 * @param WC_Order $order WooCommerce order.
+	 * @param string   $booking_id Booking ID.
+	 * @param int      $ticket_index One-based ticket index.
+	 * @param int      $event_id Event post ID.
+	 * @return void
+	 */
+	private static function persist_tec_attendee_to_row( $attendee_id, WC_Order $order, $booking_id, $ticket_index, $event_id ) {
+		if ( ! class_exists( 'GatiCrew_Events_Bridge_Attendees_Repository' ) ) {
+			self::debug_log( 'Attendee repository unavailable while saving TEC attendee linkage.' );
+			return;
+		}
+
+		$attendee_id = absint( $attendee_id );
+		$event_id    = absint( $event_id );
+
+		if ( ! $attendee_id || ! $event_id ) {
+			return;
+		}
+
+		$data       = self::get_tec_attendee_link_data( $attendee_id, $event_id );
+		$repository = new GatiCrew_Events_Bridge_Attendees_Repository();
+		$row_id     = $repository->update_tec_ticket_data( absint( $order->get_id() ), $booking_id, $ticket_index, $data );
+
+		self::debug_log(
+			'Stored TEC attendee linkage: ' . wp_json_encode(
+				array(
+					'order_id'        => absint( $order->get_id() ),
+					'booking_id'      => GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $booking_id ),
+					'ticket_index'    => absint( $ticket_index ),
+					'gaticrew_row_id' => absint( $row_id ),
+					'tec_attendee_id' => $attendee_id,
+					'security_code'   => $data['tec_security_code'],
+					'qr_url'          => $data['tec_qr_url'],
+					'qr_image_url'    => $data['tec_qr_image_url'],
+				)
+			)
+		);
+	}
+
+	/**
+	 * Builds a bridge row payload from official Event Tickets attendee meta.
+	 *
+	 * @param int $attendee_id TEC attendee post ID.
+	 * @param int $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_tec_attendee_link_data( $attendee_id, $event_id ) {
+		$security_code = self::get_tec_attendee_security_code( $attendee_id );
+		$qr_url        = self::get_tec_attendee_qr_url( $attendee_id, $event_id, $security_code );
+
+		return array(
+			'tec_attendee_post_id' => absint( $attendee_id ),
+			'tec_security_code'    => $security_code,
+			'tec_qr_url'           => $qr_url,
+			'tec_qr_image_url'     => self::get_tec_attendee_qr_image_url( $qr_url ),
+		);
+	}
+
+	/**
+	 * Reads TEC's official stored attendee security code.
+	 *
+	 * @param int $attendee_id TEC attendee post ID.
+	 * @return string
+	 */
+	private static function get_tec_attendee_security_code( $attendee_id ) {
+		$keys = array( '_tec_tickets_commerce_security_code', '_tribe_wooticket_security_code', '_tribe_rsvp_security_code', '_tribe_tpp_security_code', '_tribe_tickets_security_code' );
+
+		if ( class_exists( '\TEC\Tickets\Commerce\Attendee' ) ) {
+			array_unshift( $keys, \TEC\Tickets\Commerce\Attendee::$security_code_meta_key );
+		}
+
+		foreach ( array_unique( $keys ) as $key ) {
+			$value = get_post_meta( absint( $attendee_id ), sanitize_text_field( $key ), true );
+
+			if ( '' !== (string) $value ) {
+				return sanitize_text_field( $value );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Builds TEC's official check-in URL through the QR connector.
+	 *
+	 * @param int    $attendee_id TEC attendee post ID.
+	 * @param int    $event_id Event post ID.
+	 * @param string $security_code TEC security code.
+	 * @return string
+	 */
+	private static function get_tec_attendee_qr_url( $attendee_id, $event_id, $security_code ) {
+		if ( ! function_exists( 'tribe' ) || ! class_exists( '\TEC\Tickets\QR\Connector' ) || '' === (string) $security_code ) {
+			return '';
+		}
+
+		try {
+			$connector = tribe( \TEC\Tickets\QR\Connector::class );
+
+			if ( is_object( $connector ) && method_exists( $connector, 'get_checkin_url' ) ) {
+				return esc_url_raw( $connector->get_checkin_url( absint( $attendee_id ), absint( $event_id ), sanitize_text_field( $security_code ) ) );
+			}
+		} catch ( Throwable $exception ) {
+			self::debug_log( 'Unable to build TEC QR URL: ' . $exception->getMessage() );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Builds TEC's QR image URL for an official check-in URL.
+	 *
+	 * @param string $qr_url TEC check-in URL.
+	 * @return string
+	 */
+	private static function get_tec_attendee_qr_image_url( $qr_url ) {
+		if ( ! function_exists( 'tribe' ) || ! class_exists( '\TEC\Tickets\QR\Connector' ) || '' === (string) $qr_url ) {
+			return '';
+		}
+
+		try {
+			$connector = tribe( \TEC\Tickets\QR\Connector::class );
+
+			if ( is_object( $connector ) && method_exists( $connector, 'get_image_url_for_link' ) ) {
+				$image_url = $connector->get_image_url_for_link( esc_url_raw( $qr_url ) );
+
+				return $image_url ? esc_url_raw( $image_url ) : '';
+			}
+		} catch ( Throwable $exception ) {
+			self::debug_log( 'Unable to build TEC QR image URL: ' . $exception->getMessage() );
+		}
+
+		return '';
 	}
 
 	/**
