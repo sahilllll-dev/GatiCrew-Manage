@@ -30,7 +30,9 @@ final class GatiCrew_Events_Bridge_Dependencies {
 			GatiCrew_Events_Bridge_Schema::create_tables();
 			GatiCrew_Events_Bridge_Role_Manager::sync_role();
 			require_once GATICREW_EVENTS_BRIDGE_PATH . 'checkin/class-gaticrew-events-bridge-checkin-controller.php';
+			require_once GATICREW_EVENTS_BRIDGE_PATH . 'public/class-gaticrew-events-bridge-login-router.php';
 			GatiCrew_Events_Bridge_Checkin_Controller::register_rewrite_rules();
+			GatiCrew_Events_Bridge_Login_Router::register_rewrite_rules();
 			flush_rewrite_rules();
 			return;
 		}

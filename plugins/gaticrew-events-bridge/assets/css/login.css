@@ -1,0 +1,579 @@
+:root {
+	--gc-login-ink: #0f172a;
+	--gc-login-muted: #64748b;
+	--gc-login-border: #dbe5ef;
+	--gc-login-panel: rgba(255, 255, 255, 0.94);
+	--gc-login-primary: #0f766e;
+	--gc-login-primary-2: #0ea5a0;
+	--gc-login-dark: #061016;
+	--gc-login-dark-2: #0a1822;
+	--gc-login-radius: 24px;
+	--gc-login-shadow: 0 28px 80px rgba(15, 23, 42, 0.14);
+}
+
+html {
+	min-height: 100%;
+	background: #f7fafc;
+}
+
+body.login.gaticrew-login-shell {
+	display: grid;
+	grid-template-columns: minmax(320px, 35%) minmax(0, 65%);
+	min-height: 100dvh;
+	margin: 0;
+	background:
+		radial-gradient(circle at 82% 12%, rgba(14, 165, 160, 0.10), transparent 28rem),
+		linear-gradient(135deg, #f8fafc 0%, #eef4f8 100%);
+	color: var(--gc-login-ink);
+	font-family: Poppins, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	letter-spacing: 0;
+	overflow-x: hidden;
+}
+
+body.login.gaticrew-login-shell * {
+	box-sizing: border-box;
+}
+
+body.login.gaticrew-login-shell a {
+	color: var(--gc-login-primary);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+	transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+body.login.gaticrew-login-shell a:hover,
+body.login.gaticrew-login-shell a:focus {
+	color: #0b5f59;
+}
+
+.gaticrew-login-visual {
+	position: relative;
+	isolation: isolate;
+	grid-column: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 100dvh;
+	padding: clamp(24px, 3vw, 38px);
+	overflow: hidden;
+	background:
+		linear-gradient(145deg, rgba(5, 18, 24, 0.98), rgba(11, 24, 34, 0.96)),
+		radial-gradient(circle at 24% 16%, rgba(52, 211, 153, 0.25), transparent 20rem);
+	color: #ffffff;
+}
+
+.gaticrew-login-visual::before,
+.gaticrew-login-visual::after {
+	position: absolute;
+	z-index: -2;
+	content: "";
+	pointer-events: none;
+}
+
+.gaticrew-login-visual::before {
+	inset: -18% -42% auto auto;
+	width: 34rem;
+	height: 34rem;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(20, 184, 166, 0.36), rgba(20, 184, 166, 0.10) 38%, transparent 68%);
+	filter: blur(8px);
+}
+
+.gaticrew-login-visual::after {
+	inset: auto auto -18% -24%;
+	width: 30rem;
+	height: 30rem;
+	border-radius: 50%;
+	background: radial-gradient(circle, rgba(16, 185, 129, 0.24), transparent 62%);
+}
+
+.gaticrew-login-back {
+	position: relative;
+	z-index: 3;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	width: fit-content;
+	min-height: 38px;
+	padding: 0 14px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.07);
+	color: #e5f9f6 !important;
+	font-size: 13px;
+	font-weight: 650;
+	text-decoration: none;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(12px);
+}
+
+.gaticrew-login-back:hover,
+.gaticrew-login-back:focus {
+	border-color: rgba(45, 212, 191, 0.48);
+	background: rgba(20, 184, 166, 0.16);
+	color: #ffffff !important;
+	transform: translateY(-1px);
+}
+
+.gaticrew-login-ambient {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.gaticrew-login-ambient__ring {
+	position: absolute;
+	border: 1px solid rgba(148, 163, 184, 0.13);
+	border-radius: 50%;
+	box-shadow: inset 0 0 80px rgba(20, 184, 166, 0.05);
+}
+
+.gaticrew-login-ambient__ring--one {
+	right: -86px;
+	top: 18%;
+	width: 300px;
+	height: 300px;
+}
+
+.gaticrew-login-ambient__ring--two {
+	left: -126px;
+	bottom: 20%;
+	width: 260px;
+	height: 260px;
+}
+
+.gaticrew-login-ambient__beam {
+	position: absolute;
+	inset: 14% -18% auto auto;
+	width: 56%;
+	height: 1px;
+	background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.46), transparent);
+	transform: rotate(-28deg);
+	transform-origin: right center;
+}
+
+.gaticrew-login-visual__content {
+	position: relative;
+	z-index: 2;
+	max-width: 520px;
+}
+
+.gaticrew-login-eyebrow {
+	display: inline-flex;
+	align-items: center;
+	min-height: 28px;
+	margin-bottom: 16px;
+	padding: 0 10px;
+	border: 1px solid rgba(45, 212, 191, 0.22);
+	border-radius: 999px;
+	background: rgba(20, 184, 166, 0.10);
+	color: #99f6e4;
+	font-size: 11px;
+	font-weight: 760;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.gaticrew-login-visual__content h2 {
+	margin: 0;
+	color: #ffffff;
+	font-size: clamp(34px, 4.4vw, 58px);
+	font-weight: 820;
+	font-style: normal;
+	line-height: 0.98;
+	letter-spacing: 0;
+}
+
+.gaticrew-login-visual__content p {
+	max-width: 450px;
+	margin: 22px 0 0;
+	color: #b8c4d4;
+	font-size: 15px;
+	font-weight: 450;
+	line-height: 1.7;
+}
+
+body.login.gaticrew-login-shell #login {
+	position: relative;
+	z-index: 2;
+	grid-column: 2;
+	align-self: center;
+	justify-self: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	width: min(456px, calc(100% - 48px));
+	min-height: 100dvh;
+	margin: 0;
+	padding: clamp(34px, 6vh, 76px) 0;
+}
+
+body.login.gaticrew-login-shell #login h1.wp-login-logo {
+	margin: 0 0 26px;
+	text-align: left;
+}
+
+body.login.gaticrew-login-shell #login h1.wp-login-logo a {
+	width: auto;
+	height: auto;
+	min-height: 0;
+	margin: 0;
+	padding: 0;
+	background: none !important;
+	color: var(--gc-login-ink);
+	font-family: Poppins, Inter, ui-sans-serif, system-ui, sans-serif;
+	font-size: 38px;
+	font-weight: 850;
+	font-style: italic;
+	line-height: 1;
+	letter-spacing: 0;
+	text-indent: 0;
+	text-decoration: none;
+}
+
+body.login.gaticrew-login-shell #login h1.wp-login-logo::after {
+	display: block;
+	margin-top: 10px;
+	color: var(--gc-login-muted);
+	content: "Operations Console";
+	font-size: 14px;
+	font-weight: 560;
+	font-style: normal;
+	line-height: 1.5;
+}
+
+body.login.gaticrew-login-shell #loginform,
+body.login.gaticrew-login-shell #lostpasswordform,
+body.login.gaticrew-login-shell #registerform,
+body.login.gaticrew-login-shell #resetpassform {
+	width: 100%;
+	margin: 0;
+	padding: 34px;
+	border: 1px solid rgba(219, 229, 239, 0.86);
+	border-radius: var(--gc-login-radius);
+	background: var(--gc-login-panel);
+	box-shadow: var(--gc-login-shadow);
+	backdrop-filter: blur(18px);
+}
+
+body.login.gaticrew-login-shell form p {
+	margin: 0 0 22px;
+}
+
+body.login.gaticrew-login-shell label {
+	display: block;
+	margin: 0 0 11px;
+	color: #334155;
+	font-size: 13px;
+	font-weight: 660;
+	line-height: 1.35;
+	letter-spacing: 0;
+}
+
+body.login.gaticrew-login-shell .input,
+body.login.gaticrew-login-shell input[type="text"],
+body.login.gaticrew-login-shell input[type="password"],
+body.login.gaticrew-login-shell input[type="email"] {
+	width: 100%;
+	min-height: 50px;
+	margin: 0;
+	padding: 11px 14px;
+	border: 1px solid var(--gc-login-border);
+	border-radius: 14px;
+	background: #ffffff;
+	color: var(--gc-login-ink);
+	font-family: Poppins, Inter, ui-sans-serif, system-ui, sans-serif;
+	font-size: 15px;
+	font-weight: 500;
+	line-height: 1.4;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+body.login.gaticrew-login-shell .input:focus,
+body.login.gaticrew-login-shell input[type="text"]:focus,
+body.login.gaticrew-login-shell input[type="password"]:focus,
+body.login.gaticrew-login-shell input[type="email"]:focus {
+	border-color: var(--gc-login-primary-2);
+	box-shadow: 0 0 0 4px rgba(14, 165, 160, 0.16);
+	outline: 0;
+}
+
+body.login.gaticrew-login-shell .user-pass-wrap {
+	margin: 0 0 20px;
+}
+
+body.login.gaticrew-login-shell .wp-pwd {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+body.login.gaticrew-login-shell .button.wp-hide-pw {
+	top: 50%;
+	right: 7px;
+	transform: translateY(-50%);
+	width: 40px;
+	height: 40px;
+	min-height: 40px;
+	border: 0;
+	border-radius: 12px;
+	background: transparent;
+	color: #64748b;
+	box-shadow: none;
+}
+
+body.login.gaticrew-login-shell .button.wp-hide-pw:hover,
+body.login.gaticrew-login-shell .button.wp-hide-pw:focus {
+	background: #f1f5f9;
+	color: var(--gc-login-primary);
+	transform: translateY(-50%);
+}
+
+body.login.gaticrew-login-shell .forgetmenot {
+	display: flex;
+	align-items: center;
+	float: none;
+	min-height: 24px;
+	margin: 0 0 24px;
+}
+
+body.login.gaticrew-login-shell .forgetmenot label {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	margin: 0;
+	color: var(--gc-login-muted);
+	font-size: 13px;
+	font-weight: 560;
+	line-height: 1.35;
+}
+
+body.login.gaticrew-login-shell input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background: #ffffff;
+	box-shadow: none;
+}
+
+body.login.gaticrew-login-shell input[type="checkbox"]:checked {
+	border-color: var(--gc-login-primary);
+	background: var(--gc-login-primary);
+}
+
+body.login.gaticrew-login-shell input[type="checkbox"]:focus {
+	border-color: var(--gc-login-primary-2);
+	box-shadow: 0 0 0 4px rgba(14, 165, 160, 0.14);
+	outline: 0;
+}
+
+body.login.gaticrew-login-shell p.submit {
+	clear: none;
+	margin: 0;
+	padding: 0;
+}
+
+body.login.gaticrew-login-shell .wp-core-ui .button-primary,
+body.login.gaticrew-login-shell #wp-submit {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 52px;
+	padding: 0 18px;
+	border: 0;
+	border-radius: 15px;
+	background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%);
+	color: #ffffff;
+	font-family: Poppins, Inter, ui-sans-serif, system-ui, sans-serif;
+	font-size: 15px;
+	font-weight: 760;
+	line-height: 1;
+	text-shadow: none;
+	box-shadow: 0 16px 34px rgba(15, 118, 110, 0.26);
+	transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+body.login.gaticrew-login-shell .wp-core-ui .button-primary:hover,
+body.login.gaticrew-login-shell .wp-core-ui .button-primary:focus,
+body.login.gaticrew-login-shell #wp-submit:hover,
+body.login.gaticrew-login-shell #wp-submit:focus {
+	background: linear-gradient(135deg, #111827 0%, #0b8b81 100%);
+	color: #ffffff;
+	filter: saturate(1.08);
+	transform: translateY(-1px);
+	box-shadow: 0 20px 42px rgba(15, 118, 110, 0.32);
+}
+
+body.login.gaticrew-login-shell #nav,
+body.login.gaticrew-login-shell #backtoblog {
+	margin: 18px 0 0;
+	padding: 0;
+	text-align: center;
+}
+
+body.login.gaticrew-login-shell #backtoblog {
+	display: none;
+}
+
+body.login.gaticrew-login-shell #nav a,
+body.login.gaticrew-login-shell #backtoblog a,
+body.login.gaticrew-login-shell .privacy-policy-page-link a {
+	color: var(--gc-login-muted);
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+body.login.gaticrew-login-shell #nav a:hover,
+body.login.gaticrew-login-shell #nav a:focus,
+body.login.gaticrew-login-shell .privacy-policy-page-link a:hover,
+body.login.gaticrew-login-shell .privacy-policy-page-link a:focus {
+	color: var(--gc-login-primary);
+}
+
+body.login.gaticrew-login-shell .message,
+body.login.gaticrew-login-shell .notice,
+body.login.gaticrew-login-shell #login_error {
+	margin: 0 0 16px;
+	padding: 14px 16px;
+	border: 1px solid rgba(219, 229, 239, 0.92);
+	border-left: 4px solid var(--gc-login-primary);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.92);
+	color: #334155;
+	font-size: 13px;
+	font-weight: 520;
+	line-height: 1.55;
+	box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+body.login.gaticrew-login-shell #login_error {
+	border-left-color: #dc2626;
+}
+
+body.login.gaticrew-login-shell .privacy-policy-page-link {
+	grid-column: 2;
+	justify-self: center;
+	margin: -34px 0 28px;
+}
+
+body.login.gaticrew-login-shell .language-switcher {
+	display: none;
+}
+
+body.login.gaticrew-login-shell.interim-login {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+body.login.gaticrew-login-shell.interim-login #login {
+	width: min(430px, 100%);
+	min-height: auto;
+	padding: 0;
+}
+
+@media (max-width: 1024px) {
+	body.login.gaticrew-login-shell {
+		grid-template-columns: minmax(300px, 38%) minmax(0, 62%);
+	}
+
+	.gaticrew-login-visual {
+		padding: 26px;
+	}
+
+	.gaticrew-login-visual__content h2 {
+		font-size: clamp(32px, 4vw, 44px);
+	}
+}
+
+@media (max-width: 820px) {
+	body.login.gaticrew-login-shell {
+		display: grid;
+		grid-template-columns: 1fr;
+		grid-template-rows: auto auto;
+		background: #f8fafc;
+	}
+
+	.gaticrew-login-visual {
+		grid-column: 1;
+		min-height: 330px;
+		padding: 22px;
+	}
+
+	.gaticrew-login-visual__content {
+		max-width: 680px;
+	}
+
+	.gaticrew-login-visual__content h2 {
+		font-size: clamp(30px, 8vw, 44px);
+		line-height: 1.03;
+	}
+
+	.gaticrew-login-visual__content p {
+		max-width: 620px;
+		margin-top: 14px;
+		font-size: 14px;
+	}
+
+	body.login.gaticrew-login-shell #login {
+		grid-column: 1;
+		width: min(456px, calc(100% - 32px));
+		min-height: auto;
+		padding: 34px 0 42px;
+	}
+
+	body.login.gaticrew-login-shell .privacy-policy-page-link {
+		grid-column: 1;
+		margin: -18px 0 24px;
+	}
+}
+
+@media (max-width: 480px) {
+	.gaticrew-login-visual {
+		min-height: 300px;
+		padding: 18px;
+	}
+
+	.gaticrew-login-back {
+		min-height: 34px;
+		padding: 0 12px;
+		font-size: 12px;
+	}
+
+	body.login.gaticrew-login-shell #login {
+		width: min(100% - 24px, 420px);
+		padding: 26px 0 34px;
+	}
+
+	body.login.gaticrew-login-shell #login h1.wp-login-logo {
+		margin-bottom: 20px;
+	}
+
+	body.login.gaticrew-login-shell #login h1.wp-login-logo a {
+		font-size: 34px;
+	}
+
+	body.login.gaticrew-login-shell #loginform,
+	body.login.gaticrew-login-shell #lostpasswordform,
+	body.login.gaticrew-login-shell #registerform,
+	body.login.gaticrew-login-shell #resetpassform {
+		padding: 24px;
+		border-radius: 20px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.login.gaticrew-login-shell *,
+	body.login.gaticrew-login-shell *::before,
+	body.login.gaticrew-login-shell *::after {
+		transition: none !important;
+	}
+}

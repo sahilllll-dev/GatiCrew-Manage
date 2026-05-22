@@ -25,7 +25,10 @@ require_once GATICREW_EVENTS_BRIDGE_PATH . 'qr/class-gaticrew-events-bridge-qr-c
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'checkin/class-gaticrew-events-bridge-checkin-controller.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'pdf/class-gaticrew-events-bridge-pdf-tickets.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'orders/class-gaticrew-events-bridge-order-manager.php';
+require_once GATICREW_EVENTS_BRIDGE_PATH . 'public/class-gaticrew-events-bridge-login-router.php';
+require_once GATICREW_EVENTS_BRIDGE_PATH . 'public/class-gaticrew-events-bridge-login-ui.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-admin.php';
+require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-admin-ui.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-ticket-orders-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-attendees-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'scanner/class-gaticrew-events-bridge-scanner-admin.php';
@@ -65,6 +68,27 @@ final class GatiCrew_Events_Bridge {
 	 * @var GatiCrew_Events_Bridge_Admin
 	 */
 	private $admin;
+
+	/**
+	 * Login screen UI module.
+	 *
+	 * @var GatiCrew_Events_Bridge_Login_UI
+	 */
+	private $login_ui;
+
+	/**
+	 * Public login URL router.
+	 *
+	 * @var GatiCrew_Events_Bridge_Login_Router
+	 */
+	private $login_router;
+
+	/**
+	 * Global admin UI module.
+	 *
+	 * @var GatiCrew_Events_Bridge_Admin_UI
+	 */
+	private $admin_ui;
 
 	/**
 	 * Live check-in REST controller.
@@ -154,7 +178,10 @@ final class GatiCrew_Events_Bridge {
 		add_action( 'init', array( $this, 'register_event_meta' ) );
 
 		$this->admin_permissions       = new GatiCrew_Events_Bridge_Admin_Permissions();
+		$this->login_router           = new GatiCrew_Events_Bridge_Login_Router();
+		$this->login_ui                = new GatiCrew_Events_Bridge_Login_UI();
 		$this->admin                   = new GatiCrew_Events_Bridge_Admin();
+		$this->admin_ui                = new GatiCrew_Events_Bridge_Admin_UI();
 		$this->checkin_rest_controller = new GatiCrew_Events_Bridge_Checkin_REST_Controller();
 		$this->order_manager           = new GatiCrew_Events_Bridge_Order_Manager();
 		$this->ticket_orders_admin     = new GatiCrew_Events_Bridge_Ticket_Orders_Admin();
@@ -165,7 +192,10 @@ final class GatiCrew_Events_Bridge {
 		$this->pdf_tickets             = new GatiCrew_Events_Bridge_PDF_Tickets();
 
 		$this->admin_permissions->init();
+		$this->login_router->init();
+		$this->login_ui->init();
 		$this->admin->init();
+		$this->admin_ui->init();
 		$this->checkin_rest_controller->init();
 		$this->order_manager->init();
 		$this->ticket_orders_admin->init();

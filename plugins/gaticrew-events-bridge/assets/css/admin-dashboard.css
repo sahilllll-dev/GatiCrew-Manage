@@ -1,0 +1,1243 @@
+:root {
+	--gc-bg: #f6f8fb;
+	--gc-bg-elevated: #ffffff;
+	--gc-bg-soft: #eef3f8;
+	--gc-sidebar: #0c1322;
+	--gc-sidebar-2: #111b2d;
+	--gc-text: #111827;
+	--gc-text-muted: #667085;
+	--gc-text-soft: #98a2b3;
+	--gc-border: #d9e2ec;
+	--gc-border-soft: #edf1f6;
+	--gc-primary: #0f766e;
+	--gc-primary-2: #0ea5a0;
+	--gc-primary-soft: #e7f8f5;
+	--gc-danger: #b42318;
+	--gc-danger-soft: #fff1f0;
+	--gc-warning: #b54708;
+	--gc-warning-soft: #fff6e6;
+	--gc-info: #175cd3;
+	--gc-info-soft: #eff6ff;
+	--gc-radius-xs: 8px;
+	--gc-radius-sm: 10px;
+	--gc-radius-md: 14px;
+	--gc-radius-lg: 18px;
+	--gc-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+	--gc-shadow-md: 0 14px 40px rgba(15, 23, 42, 0.09);
+	--gc-shadow-sidebar: 24px 0 60px rgba(15, 23, 42, 0.14);
+	--gc-focus: 0 0 0 3px rgba(14, 165, 160, 0.18);
+	--gc-sidebar-width: 256px;
+	--gc-topbar-height: 56px;
+	--gc-transition: 160ms ease;
+}
+
+body.gaticrew-admin-shell {
+	background:
+		radial-gradient(circle at top left, rgba(14, 165, 160, 0.10), transparent 32rem),
+		linear-gradient(180deg, #f8fafc 0%, var(--gc-bg) 100%);
+	color: var(--gc-text);
+	font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-size: 14px;
+	letter-spacing: 0;
+}
+
+body.gaticrew-admin-shell * {
+	box-sizing: border-box;
+}
+
+body.gaticrew-admin-shell a {
+	color: var(--gc-primary);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 3px;
+	transition: color var(--gc-transition), background-color var(--gc-transition), border-color var(--gc-transition), box-shadow var(--gc-transition), transform var(--gc-transition);
+}
+
+body.gaticrew-admin-shell a:hover,
+body.gaticrew-admin-shell a:focus {
+	color: #0b5f59;
+}
+
+body.gaticrew-admin-shell #wpwrap {
+	background: transparent;
+}
+
+body.gaticrew-admin-shell #wpcontent,
+body.gaticrew-admin-shell #wpfooter {
+	margin-left: var(--gc-sidebar-width);
+}
+
+body.gaticrew-admin-shell #wpcontent {
+	padding-left: 0;
+}
+
+body.gaticrew-admin-shell #wpbody-content {
+	padding: 32px 34px 72px;
+}
+
+body.gaticrew-admin-shell .wrap {
+	max-width: 1480px;
+	margin: 0;
+}
+
+body.gaticrew-admin-shell .wrap > h1,
+body.gaticrew-admin-shell .wrap h1.wp-heading-inline {
+	margin: 0 0 18px;
+	color: var(--gc-text);
+	font-size: 30px;
+	font-weight: 760;
+	line-height: 1.15;
+	letter-spacing: 0;
+}
+
+body.gaticrew-admin-shell .wrap > h1 + .page-title-action,
+body.gaticrew-admin-shell .wrap h1.wp-heading-inline + .page-title-action {
+	margin-left: 10px;
+	vertical-align: 6px;
+}
+
+body.gaticrew-admin-shell #wpadminbar {
+	height: var(--gc-topbar-height);
+	background: rgba(8, 13, 24, 0.98);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: 0 1px 22px rgba(2, 6, 23, 0.28);
+	backdrop-filter: blur(18px);
+}
+
+body.gaticrew-admin-shell #wpadminbar #wp-toolbar,
+body.gaticrew-admin-shell #wpadminbar .quicklinks,
+body.gaticrew-admin-shell #wpadminbar .quicklinks > ul,
+body.gaticrew-admin-shell #wpadminbar .quicklinks > ul > li {
+	height: var(--gc-topbar-height);
+}
+
+body.gaticrew-admin-shell #wp-admin-bar-wp-logo,
+body.gaticrew-admin-shell #wp-admin-bar-site-name,
+body.gaticrew-admin-shell #wp-admin-bar-comments,
+body.gaticrew-admin-shell #wp-admin-bar-updates,
+body.gaticrew-admin-shell #wp-admin-bar-my-account,
+body.gaticrew-admin-shell #wp-admin-bar-gaticrew-platform {
+	display: none !important;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-item,
+body.gaticrew-admin-shell #wpadminbar a.ab-item,
+body.gaticrew-admin-shell #wpadminbar > #wp-toolbar span.ab-label,
+body.gaticrew-admin-shell #wpadminbar > #wp-toolbar span.noticon {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: var(--gc-topbar-height);
+	color: #d7dee8;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-icon,
+body.gaticrew-admin-shell #wpadminbar .ab-icon::before,
+body.gaticrew-admin-shell #wpadminbar .ab-item::before {
+	color: #94a3b8;
+	line-height: 1;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0;
+	padding: 0;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-icon::before,
+body.gaticrew-admin-shell #wpadminbar .ab-item::before {
+	top: auto;
+}
+
+body.gaticrew-admin-shell #wpadminbar .quicklinks .ab-top-menu > li > .ab-item,
+body.gaticrew-admin-shell #wpadminbar .quicklinks .ab-top-secondary > li > .ab-item {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	min-height: var(--gc-topbar-height);
+	padding: 0 12px;
+}
+
+body.gaticrew-admin-shell #wpadminbar #wp-admin-bar-my-account.with-avatar > .ab-empty-item img,
+body.gaticrew-admin-shell #wpadminbar #wp-admin-bar-my-account.with-avatar > a img {
+	width: 28px;
+	height: 28px;
+	margin: 0 0 0 8px;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.08);
+}
+
+body.gaticrew-admin-shell #wpadminbar:not(.mobile) .ab-top-menu > li:hover > .ab-item,
+body.gaticrew-admin-shell #wpadminbar:not(.mobile) .ab-top-menu > li > .ab-item:focus,
+body.gaticrew-admin-shell #wpadminbar.nojq .quicklinks .ab-top-menu > li > .ab-item:focus {
+	background: rgba(255, 255, 255, 0.08);
+	color: #ffffff;
+	box-shadow: inset 0 -2px 0 rgba(45, 212, 191, 0.72);
+}
+
+body.gaticrew-admin-shell #wpadminbar .menupop .ab-sub-wrapper {
+	overflow: hidden;
+	margin-top: 0;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 14px;
+	background: #111827;
+	box-shadow: 0 18px 44px rgba(2, 6, 23, 0.30);
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-submenu {
+	padding: 8px;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-submenu .ab-item {
+	display: flex;
+	align-items: center;
+	min-height: 36px;
+	height: auto;
+	padding: 0 10px;
+	border-radius: 10px;
+	color: #d7dee8;
+	line-height: 1.25;
+}
+
+body.gaticrew-admin-shell #wpadminbar .ab-submenu .ab-item:hover,
+body.gaticrew-admin-shell #wpadminbar .ab-submenu .ab-item:focus {
+	background: rgba(255, 255, 255, 0.08);
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell #adminmenumain {
+	width: var(--gc-sidebar-width);
+}
+
+body.gaticrew-admin-shell #adminmenuback,
+body.gaticrew-admin-shell #adminmenuwrap {
+	width: var(--gc-sidebar-width);
+	background:
+		linear-gradient(180deg, rgba(17, 27, 45, 0.98) 0%, rgba(12, 19, 34, 0.99) 100%);
+	box-shadow: var(--gc-shadow-sidebar);
+}
+
+body.gaticrew-admin-shell #adminmenuwrap {
+	position: fixed;
+	top: var(--gc-topbar-height);
+	bottom: 0;
+	padding: 18px 14px 18px;
+	overflow-y: auto;
+}
+
+body.gaticrew-admin-shell #adminmenuback {
+	top: var(--gc-topbar-height);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-brand {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 54px;
+	margin: 0 4px 18px;
+	padding: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.10);
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.06);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-brand__mark {
+	display: inline-grid;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 12px;
+	background: linear-gradient(135deg, var(--gc-primary-2), #34d399);
+	color: #052e2b;
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-brand__copy {
+	display: grid;
+	gap: 1px;
+	color: #f8fafc;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-brand__copy strong {
+	font-size: 15px;
+	font-weight: 760;
+	line-height: 1.1;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-brand__copy small {
+	color: #98a2b3;
+	font-size: 11px;
+	font-weight: 650;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}
+
+body.gaticrew-admin-shell #adminmenu {
+	width: 100%;
+	margin: 0;
+	background: transparent;
+}
+
+body.gaticrew-admin-shell #adminmenu li.menu-top {
+	position: relative;
+	margin: 4px 0;
+	border-radius: 12px;
+	overflow: visible;
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-submenu {
+	left: var(--gc-sidebar-width);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 14px;
+	background: #111827;
+	box-shadow: 0 18px 48px rgba(2, 6, 23, 0.22);
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu .wp-submenu,
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu.opensub .wp-submenu,
+body.gaticrew-admin-shell #adminmenu li.current .wp-submenu {
+	position: static;
+	width: auto;
+	min-width: 0;
+	margin: 5px 6px 10px 34px;
+	padding: 2px 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu .wp-submenu::before {
+	display: none;
+	content: none;
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-submenu a {
+	display: flex;
+	align-items: center;
+	min-height: 30px;
+	padding: 6px 9px 6px 10px;
+	border-radius: 9px;
+	color: #aab6c7;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-submenu a:hover,
+body.gaticrew-admin-shell #adminmenu .wp-submenu a:focus {
+	color: #ffffff;
+	background: rgba(255, 255, 255, 0.075);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-submenu li.current a,
+body.gaticrew-admin-shell #adminmenu .wp-submenu li.current a:hover,
+body.gaticrew-admin-shell #adminmenu .wp-submenu li.current a:focus {
+	background: rgba(14, 165, 160, 0.16);
+	color: #bffcf2;
+	font-weight: 760;
+}
+
+body.gaticrew-admin-shell #adminmenu a.menu-top {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	min-height: 44px;
+	padding: 0;
+	border-radius: 12px;
+	color: #d7dee8;
+	font-weight: 650;
+	line-height: 1;
+	transition: background-color var(--gc-transition), color var(--gc-transition), transform var(--gc-transition);
+}
+
+body.gaticrew-admin-shell #adminmenu div.wp-menu-image {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	float: none;
+	flex: 0 0 42px;
+	width: 42px;
+	height: 44px;
+	margin: 0;
+}
+
+body.gaticrew-admin-shell #adminmenu div.wp-menu-name {
+	display: flex;
+	align-items: center;
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 44px;
+	padding: 0 10px 0 0;
+	line-height: 1.2;
+}
+
+body.gaticrew-admin-shell #adminmenu div.wp-menu-image::before {
+	color: #9aa8bb;
+	width: 22px;
+	height: 22px;
+	line-height: 22px;
+	text-align: center;
+	transition: color var(--gc-transition);
+}
+
+body.gaticrew-admin-shell #adminmenu li.menu-top:hover,
+body.gaticrew-admin-shell #adminmenu li.opensub > a.menu-top,
+body.gaticrew-admin-shell #adminmenu li > a.menu-top:focus {
+	background: transparent;
+	box-shadow: none;
+}
+
+body.gaticrew-admin-shell #adminmenu li.menu-top:hover > a.menu-top,
+body.gaticrew-admin-shell #adminmenu li.opensub > a.menu-top,
+body.gaticrew-admin-shell #adminmenu li > a.menu-top:focus {
+	background: rgba(255, 255, 255, 0.095);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.055);
+}
+
+body.gaticrew-admin-shell #adminmenu li.menu-top:hover a.menu-top,
+body.gaticrew-admin-shell #adminmenu li.opensub > a.menu-top,
+body.gaticrew-admin-shell #adminmenu li > a.menu-top:focus {
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell #adminmenu li.menu-top:hover div.wp-menu-image::before,
+body.gaticrew-admin-shell #adminmenu li.opensub div.wp-menu-image::before,
+body.gaticrew-admin-shell #adminmenu li > a.menu-top:focus div.wp-menu-image::before {
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-submenu > a.menu-top::after {
+	content: "";
+	display: block;
+	flex: 0 0 6px;
+	width: 6px;
+	height: 6px;
+	margin: 0 13px 0 6px;
+	border-right: 1.5px solid #64748b;
+	border-bottom: 1.5px solid #64748b;
+	opacity: 0.72;
+	transform: rotate(-45deg);
+	transition: border-color var(--gc-transition), opacity var(--gc-transition), transform var(--gc-transition);
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-submenu:hover > a.menu-top::after,
+body.gaticrew-admin-shell #adminmenu li.wp-has-submenu.opensub > a.menu-top::after {
+	border-color: #ffffff;
+	opacity: 0.95;
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu > a.wp-has-current-submenu::after {
+	margin-top: -1px;
+	border-color: #99f6e4;
+	opacity: 1;
+	transform: rotate(45deg);
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu > a.wp-has-current-submenu,
+body.gaticrew-admin-shell #adminmenu li.current a.menu-top {
+	background: rgba(14, 165, 160, 0.17);
+	color: #ffffff;
+	box-shadow:
+		inset 0 0 0 1px rgba(45, 212, 191, 0.20),
+		0 10px 28px rgba(0, 0, 0, 0.14);
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu > a.wp-has-current-submenu::before,
+body.gaticrew-admin-shell #adminmenu li.current a.menu-top::before {
+	content: "";
+	position: absolute;
+	left: 3px;
+	top: 13px;
+	bottom: 13px;
+	width: 2px;
+	border-radius: 999px;
+	background: #2dd4bf;
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-menu-arrow,
+body.gaticrew-admin-shell #adminmenu li.wp-has-submenu.wp-not-current-submenu.opensub::after,
+body.gaticrew-admin-shell #adminmenu li.wp-has-submenu.wp-not-current-submenu:hover::after,
+body.gaticrew-admin-shell #adminmenu .wp-has-current-submenu .wp-submenu .wp-submenu-head {
+	display: none !important;
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu div.wp-menu-image::before,
+body.gaticrew-admin-shell #adminmenu li.current div.wp-menu-image::before {
+	color: #99f6e4;
+}
+
+body.gaticrew-admin-shell #adminmenu li.wp-has-current-submenu div.wp-menu-name,
+body.gaticrew-admin-shell #adminmenu li.current div.wp-menu-name {
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell #adminmenu .wp-menu-separator {
+	height: 10px;
+	margin: 6px 0;
+	border: 0;
+	background: transparent;
+}
+
+body.gaticrew-admin-shell #collapse-menu {
+	display: none;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile {
+	position: sticky;
+	bottom: 0;
+	display: block;
+	min-height: 40px;
+	margin: 14px 4px 0;
+	padding: 0;
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	min-height: 42px;
+	margin: 0;
+	padding: 7px 8px;
+	border: 1px solid rgba(255, 255, 255, 0.10);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.045);
+	color: #ffffff;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: none;
+	backdrop-filter: blur(10px);
+	transition: background-color var(--gc-transition), border-color var(--gc-transition), box-shadow var(--gc-transition);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__trigger:hover,
+body.gaticrew-admin-shell .gaticrew-admin-profile__trigger:focus,
+body.gaticrew-admin-shell .gaticrew-admin-profile.is-open .gaticrew-admin-profile__trigger {
+	border-color: rgba(45, 212, 191, 0.24);
+	background: rgba(255, 255, 255, 0.075);
+	box-shadow: inset 0 0 0 1px rgba(45, 212, 191, 0.08);
+	outline: 0;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__avatar {
+	display: inline-grid;
+	flex: 0 0 28px;
+	width: 28px;
+	height: 28px;
+	place-items: center;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.12);
+	color: #e6fffb;
+	font-size: 10px;
+	font-weight: 800;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__content {
+	display: grid;
+	align-items: center;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__content strong,
+body.gaticrew-admin-shell .gaticrew-admin-profile__content small {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__content strong {
+	color: #ffffff;
+	font-size: 12px;
+	line-height: 1.1;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__content small {
+	display: none;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__chevron {
+	flex: 0 0 7px;
+	width: 7px;
+	height: 7px;
+	margin-right: 3px;
+	border-right: 1.5px solid #94a3b8;
+	border-bottom: 1.5px solid #94a3b8;
+	opacity: 0.78;
+	transform: rotate(45deg);
+	transition: border-color var(--gc-transition), opacity var(--gc-transition), transform var(--gc-transition);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile.is-open .gaticrew-admin-profile__chevron {
+	border-color: #99f6e4;
+	opacity: 1;
+	transform: rotate(225deg);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__menu {
+	position: absolute;
+	right: 0;
+	bottom: calc(100% + 8px);
+	left: 0;
+	z-index: 1002;
+	display: grid;
+	gap: 4px;
+	padding: 7px;
+	border: 1px solid rgba(255, 255, 255, 0.10);
+	border-radius: 16px;
+	background: rgba(11, 18, 32, 0.98);
+	box-shadow: 0 18px 42px rgba(2, 6, 23, 0.34);
+	opacity: 0;
+	pointer-events: none;
+	transform: translateY(8px) scale(0.98);
+	transform-origin: bottom center;
+	transition: opacity var(--gc-transition), transform var(--gc-transition);
+	backdrop-filter: blur(16px);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile.is-open .gaticrew-admin-profile__menu {
+	opacity: 1;
+	pointer-events: auto;
+	transform: translateY(0) scale(1);
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__menu-item {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	min-height: 36px;
+	padding: 0 9px;
+	border-radius: 11px;
+	color: #d7dee8;
+	font-size: 12px;
+	font-weight: 650;
+	line-height: 1;
+	text-decoration: none;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__menu-item:hover,
+body.gaticrew-admin-shell .gaticrew-admin-profile__menu-item:focus {
+	background: rgba(255, 255, 255, 0.08);
+	color: #ffffff;
+	outline: 0;
+}
+
+body.gaticrew-admin-shell .gaticrew-admin-profile__menu-icon {
+	display: inline-grid;
+	flex: 0 0 22px;
+	width: 22px;
+	height: 22px;
+	place-items: center;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.07);
+	color: #99f6e4;
+	font-size: 10px;
+	font-weight: 800;
+}
+
+body.gaticrew-admin-shell .notice,
+body.gaticrew-admin-shell div.updated,
+body.gaticrew-admin-shell div.error {
+	margin: 14px 0 18px;
+	padding: 14px 16px;
+	border: 1px solid var(--gc-border);
+	border-left-width: 4px;
+	border-radius: var(--gc-radius-md);
+	background: rgba(255, 255, 255, 0.90);
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell .notice-success {
+	border-left-color: var(--gc-primary);
+}
+
+body.gaticrew-admin-shell .notice-error,
+body.gaticrew-admin-shell div.error {
+	border-left-color: var(--gc-danger);
+}
+
+body.gaticrew-admin-shell .notice-warning {
+	border-left-color: var(--gc-warning);
+}
+
+body.gaticrew-admin-shell .postbox,
+body.gaticrew-admin-shell .stuffbox,
+body.gaticrew-admin-shell .card,
+body.gaticrew-admin-shell .woocommerce-layout__activity-panel-tabs,
+body.gaticrew-admin-shell .gaticrew-attendee-details__panel,
+body.gaticrew-admin-shell .gaticrew-ticket-order-details__panel,
+body.gaticrew-admin-shell .gaticrew-checkin-dashboard__scanner,
+body.gaticrew-admin-shell .gaticrew-checkin-result {
+	border: 1px solid var(--gc-border-soft);
+	border-radius: var(--gc-radius-lg);
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell .woocommerce-layout__header,
+body.gaticrew-admin-shell .woocommerce-layout__header-wrapper,
+body.gaticrew-admin-shell .woocommerce-layout__activity-panel-wrapper,
+body.gaticrew-admin-shell .woocommerce-layout__activity-panel {
+	display: none !important;
+}
+
+body.gaticrew-admin-shell.woocommerce-admin-page #wpbody-content,
+body.gaticrew-admin-shell.woocommerce-page #wpbody-content {
+	padding-top: 24px;
+}
+
+body.gaticrew-admin-shell .woocommerce-layout,
+body.gaticrew-admin-shell .woocommerce-layout__primary {
+	padding-top: 0 !important;
+}
+
+body.gaticrew-admin-shell .postbox-header {
+	border-bottom: 1px solid var(--gc-border-soft);
+}
+
+body.gaticrew-admin-shell .postbox .hndle,
+body.gaticrew-admin-shell .postbox .handlediv,
+body.gaticrew-admin-shell .postbox h2,
+body.gaticrew-admin-shell .postbox h3 {
+	color: var(--gc-text);
+	font-weight: 740;
+}
+
+body.gaticrew-admin-shell .inside {
+	color: var(--gc-text-muted);
+}
+
+body.gaticrew-admin-shell .wp-list-table,
+body.gaticrew-admin-shell table.widefat {
+	overflow: hidden;
+	border: 1px solid var(--gc-border-soft);
+	border-radius: var(--gc-radius-lg);
+	background: var(--gc-bg-elevated);
+	border-collapse: separate;
+	border-spacing: 0;
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell .wp-list-table thead th,
+body.gaticrew-admin-shell .wp-list-table tfoot th,
+body.gaticrew-admin-shell table.widefat thead th,
+body.gaticrew-admin-shell table.widefat tfoot th {
+	padding: 15px 18px;
+	border-bottom: 1px solid var(--gc-border-soft);
+	background: #f8fafc;
+	color: #475467;
+	font-size: 12px;
+	font-weight: 760;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+body.gaticrew-admin-shell .wp-list-table tbody td,
+body.gaticrew-admin-shell .wp-list-table tbody th,
+body.gaticrew-admin-shell table.widefat tbody td,
+body.gaticrew-admin-shell table.widefat tbody th {
+	padding: 16px 18px;
+	border-bottom: 1px solid var(--gc-border-soft);
+	color: var(--gc-text);
+	vertical-align: middle;
+}
+
+body.gaticrew-admin-shell .wp-list-table .check-column,
+body.gaticrew-admin-shell table.widefat .check-column {
+	width: 46px;
+	padding: 0 12px !important;
+	text-align: center;
+	vertical-align: middle;
+}
+
+body.gaticrew-admin-shell .wp-list-table .check-column input[type="checkbox"],
+body.gaticrew-admin-shell table.widefat .check-column input[type="checkbox"],
+body.gaticrew-admin-shell .wp-list-table th input[type="checkbox"],
+body.gaticrew-admin-shell table.widefat th input[type="checkbox"] {
+	display: inline-grid;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	vertical-align: middle;
+	border-radius: 6px;
+}
+
+body.gaticrew-admin-shell .wp-list-table thead .check-column input[type="checkbox"],
+body.gaticrew-admin-shell .wp-list-table tfoot .check-column input[type="checkbox"] {
+	transform: translateY(1px);
+}
+
+body.gaticrew-admin-shell .wp-list-table thead th a,
+body.gaticrew-admin-shell .wp-list-table tfoot th a {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: #475467;
+}
+
+body.gaticrew-admin-shell .wp-list-table .sorting-indicators {
+	display: inline-flex;
+	flex-direction: column;
+	justify-content: center;
+	height: 16px;
+	margin-left: 3px;
+	vertical-align: middle;
+}
+
+body.gaticrew-admin-shell .wp-list-table .sorting-indicator {
+	margin-top: 0;
+}
+
+body.gaticrew-admin-shell .wp-list-table tbody tr,
+body.gaticrew-admin-shell table.widefat tbody tr {
+	transition: background-color var(--gc-transition), transform var(--gc-transition);
+}
+
+body.gaticrew-admin-shell .wp-list-table tbody tr:hover,
+body.gaticrew-admin-shell table.widefat tbody tr:hover {
+	background: #f7fafc;
+	box-shadow: inset 3px 0 0 rgba(14, 165, 160, 0.22);
+}
+
+body.gaticrew-admin-shell .striped > tbody > :nth-child(odd),
+body.gaticrew-admin-shell ul.striped > :nth-child(odd),
+body.gaticrew-admin-shell .alternate {
+	background: #ffffff;
+}
+
+body.gaticrew-admin-shell .tablenav {
+	min-height: 44px;
+	margin: 16px 0;
+}
+
+body.gaticrew-admin-shell .tablenav .tablenav-pages {
+	color: var(--gc-text-muted);
+}
+
+body.gaticrew-admin-shell .tablenav .tablenav-pages a,
+body.gaticrew-admin-shell .tablenav-pages-navspan,
+body.gaticrew-admin-shell .tablenav .tablenav-pages .button {
+	min-width: 34px;
+	height: 34px;
+	border: 1px solid var(--gc-border);
+	border-radius: 10px;
+	background: #ffffff;
+	color: var(--gc-text);
+	line-height: 32px;
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell .subsubsub {
+	margin: 4px 0 18px;
+	color: var(--gc-text-muted);
+}
+
+body.gaticrew-admin-shell .subsubsub a {
+	display: inline-flex;
+	align-items: center;
+	min-height: 30px;
+	padding: 0 10px;
+	border-radius: 999px;
+	color: var(--gc-text-muted);
+	text-decoration: none;
+}
+
+body.gaticrew-admin-shell .subsubsub a.current,
+body.gaticrew-admin-shell .subsubsub a:hover {
+	background: var(--gc-primary-soft);
+	color: var(--gc-primary);
+}
+
+body.gaticrew-admin-shell input[type="text"],
+body.gaticrew-admin-shell input[type="search"],
+body.gaticrew-admin-shell input[type="email"],
+body.gaticrew-admin-shell input[type="url"],
+body.gaticrew-admin-shell input[type="number"],
+body.gaticrew-admin-shell input[type="password"],
+body.gaticrew-admin-shell input[type="tel"],
+body.gaticrew-admin-shell select,
+body.gaticrew-admin-shell textarea,
+body.gaticrew-admin-shell .select2-container .select2-selection,
+body.gaticrew-admin-shell .selectWoo-container .selectWoo-selection {
+	min-height: 40px;
+	border: 1px solid var(--gc-border);
+	border-radius: var(--gc-radius-sm);
+	background-color: #ffffff;
+	color: var(--gc-text);
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+	transition: border-color var(--gc-transition), box-shadow var(--gc-transition), background-color var(--gc-transition);
+}
+
+body.gaticrew-admin-shell input[type="checkbox"],
+body.gaticrew-admin-shell input[type="radio"] {
+	width: 18px;
+	height: 18px;
+	border-color: #cbd5e1;
+	border-radius: 6px;
+	box-shadow: none;
+}
+
+body.gaticrew-admin-shell input[type="checkbox"]:checked,
+body.gaticrew-admin-shell input[type="radio"]:checked {
+	border-color: var(--gc-primary);
+	background-color: var(--gc-primary);
+}
+
+body.gaticrew-admin-shell input:focus,
+body.gaticrew-admin-shell select:focus,
+body.gaticrew-admin-shell textarea:focus {
+	border-color: var(--gc-primary-2);
+	box-shadow: var(--gc-focus);
+	outline: 0;
+}
+
+body.gaticrew-admin-shell .search-box input[name="s"],
+body.gaticrew-admin-shell .search-box input[type="search"] {
+	min-width: 280px;
+	padding-left: 14px;
+}
+
+body.gaticrew-admin-shell .wp-core-ui .button,
+body.gaticrew-admin-shell .wp-core-ui .button-secondary,
+body.gaticrew-admin-shell .page-title-action {
+	min-height: 38px;
+	padding: 7px 14px;
+	border: 1px solid var(--gc-border);
+	border-radius: var(--gc-radius-sm);
+	background: #ffffff;
+	color: var(--gc-text);
+	font-weight: 680;
+	line-height: 1.5;
+	box-shadow: var(--gc-shadow-sm);
+	transition: transform var(--gc-transition), box-shadow var(--gc-transition), background-color var(--gc-transition), border-color var(--gc-transition), color var(--gc-transition);
+}
+
+body.gaticrew-admin-shell .wp-core-ui .button:hover,
+body.gaticrew-admin-shell .wp-core-ui .button-secondary:hover,
+body.gaticrew-admin-shell .page-title-action:hover {
+	border-color: #b8c4d2;
+	background: #f8fafc;
+	color: var(--gc-text);
+	transform: translateY(-1px);
+	box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+body.gaticrew-admin-shell .wp-core-ui .button-primary,
+body.gaticrew-admin-shell .wp-core-ui .button.button-primary,
+body.gaticrew-admin-shell .wrap .page-title-action {
+	border-color: transparent;
+	background: linear-gradient(135deg, var(--gc-primary), var(--gc-primary-2));
+	color: #ffffff;
+	box-shadow: 0 10px 24px rgba(15, 118, 110, 0.22);
+}
+
+body.gaticrew-admin-shell .wp-core-ui .button-primary:hover,
+body.gaticrew-admin-shell .wp-core-ui .button.button-primary:hover,
+body.gaticrew-admin-shell .wrap .page-title-action:hover {
+	background: linear-gradient(135deg, #0b5f59, var(--gc-primary));
+	color: #ffffff;
+}
+
+body.gaticrew-admin-shell .wp-core-ui .button-link-delete {
+	color: var(--gc-danger);
+}
+
+body.gaticrew-admin-shell .gaticrew-attendee-status,
+body.gaticrew-admin-shell mark.order-status,
+body.gaticrew-admin-shell .order-status,
+body.gaticrew-admin-shell .status-enabled,
+body.gaticrew-admin-shell .status-active {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 26px;
+	padding: 0 10px;
+	border-radius: 999px;
+	border: 1px solid transparent;
+	font-size: 12px;
+	font-weight: 760;
+	line-height: 1;
+	white-space: nowrap;
+}
+
+body.gaticrew-admin-shell .gaticrew-attendee-status--confirmed,
+body.gaticrew-admin-shell .order-status.status-processing,
+body.gaticrew-admin-shell .order-status.status-completed {
+	border-color: #b7eadf;
+	background: var(--gc-primary-soft);
+	color: #067647;
+}
+
+body.gaticrew-admin-shell .gaticrew-attendee-status--cancelled,
+body.gaticrew-admin-shell .order-status.status-cancelled,
+body.gaticrew-admin-shell .order-status.status-failed {
+	border-color: #fecdca;
+	background: var(--gc-danger-soft);
+	color: var(--gc-danger);
+}
+
+body.gaticrew-admin-shell .gaticrew-attendee-status--checked-in,
+body.gaticrew-admin-shell .order-status.status-on-hold,
+body.gaticrew-admin-shell .order-status.status-pending {
+	border-color: #bfdbfe;
+	background: var(--gc-info-soft);
+	color: var(--gc-info);
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 14px;
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	gap: 14px;
+	min-height: 138px;
+	padding: 18px;
+	border: 1px solid rgba(217, 226, 236, 0.72);
+	border-radius: var(--gc-radius-lg);
+	background:
+		linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.86)),
+		radial-gradient(circle at top right, rgba(14, 165, 160, 0.12), transparent 12rem);
+	box-shadow: var(--gc-shadow-sm);
+	transition: transform var(--gc-transition), box-shadow var(--gc-transition), border-color var(--gc-transition);
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card:hover {
+	border-color: #bdece7;
+	box-shadow: var(--gc-shadow-md);
+	transform: translateY(-2px);
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card__icon {
+	display: inline-grid;
+	flex: 0 0 42px;
+	width: 42px;
+	height: 42px;
+	place-items: center;
+	border-radius: 14px;
+	background: #ecfdf5;
+	color: var(--gc-primary);
+	font-weight: 800;
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card__content {
+	display: grid;
+	align-content: start;
+	gap: 5px;
+	min-width: 0;
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card__label,
+body.gaticrew-admin-shell .gaticrew-kpi-card__trend {
+	color: var(--gc-text-muted);
+	font-size: 12px;
+	font-weight: 650;
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card__label {
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+body.gaticrew-admin-shell .gaticrew-kpi-card__value {
+	color: var(--gc-text);
+	font-size: 28px;
+	font-weight: 800;
+	line-height: 1.08;
+}
+
+body.gaticrew-admin-shell .gaticrew-shortcut-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 12px;
+}
+
+body.gaticrew-admin-shell .gaticrew-shortcut-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 54px;
+	padding: 14px 16px;
+	border: 1px solid var(--gc-border-soft);
+	border-radius: var(--gc-radius-md);
+	background: #ffffff;
+	color: var(--gc-text);
+	font-weight: 720;
+	text-decoration: none;
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell .gaticrew-shortcut-card:hover,
+body.gaticrew-admin-shell .gaticrew-shortcut-card:focus {
+	border-color: #bdece7;
+	background: #f7fffd;
+	color: var(--gc-primary);
+	box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+	transform: translateY(-1px);
+}
+
+body.gaticrew-admin-shell .gaticrew-shortcut-card i {
+	color: var(--gc-primary);
+	font-style: normal;
+}
+
+body.gaticrew-admin-shell #dashboard-widgets .postbox-container {
+	width: 100% !important;
+}
+
+body.gaticrew-admin-shell.index-php #dashboard-widgets-wrap,
+body.gaticrew-admin-shell.index-php #dashboard-widgets,
+body.gaticrew-admin-shell.index-php #dashboard-widgets #postbox-container-1,
+body.gaticrew-admin-shell.index-php #dashboard-widgets #normal-sortables,
+body.gaticrew-admin-shell.index-php #dashboard-widgets #gaticrew_platform_overview {
+	width: 100% !important;
+	max-width: none;
+}
+
+body.gaticrew-admin-shell.index-php #dashboard-widgets #postbox-container-2,
+body.gaticrew-admin-shell.index-php #dashboard-widgets #postbox-container-3,
+body.gaticrew-admin-shell.index-php #dashboard-widgets #postbox-container-4 {
+	display: none;
+}
+
+body.gaticrew-admin-shell #dashboard-widgets .meta-box-sortables {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 18px;
+	min-height: 0;
+}
+
+body.gaticrew-admin-shell #dashboard-widgets .postbox {
+	margin-bottom: 0;
+}
+
+body.gaticrew-admin-shell #screen-meta-links .show-settings {
+	border-color: var(--gc-border);
+	border-radius: 0 0 10px 10px;
+	background: #ffffff;
+	color: var(--gc-text-muted);
+	box-shadow: var(--gc-shadow-sm);
+}
+
+body.gaticrew-admin-shell #wpfooter {
+	color: var(--gc-text-muted);
+}
+
+body.gaticrew-admin-shell .gaticrew-checkin-dashboard {
+	max-width: none;
+}
+
+body.gaticrew-admin-shell .gaticrew-checkin-dashboard__layout,
+body.gaticrew-admin-shell .gaticrew-ticket-order-details,
+body.gaticrew-admin-shell .gaticrew-attendee-details__grid {
+	gap: 20px;
+}
+
+body.gaticrew-admin-shell .gaticrew-checkin-dashboard__reader {
+	border-radius: var(--gc-radius-md);
+}
+
+body.gaticrew-admin-shell .gaticrew-ticket-orders-admin .subsubsub,
+body.gaticrew-admin-shell .gaticrew-attendees-admin .subsubsub {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+@media (max-width: 1200px) {
+	body.gaticrew-admin-shell .gaticrew-kpi-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	body.gaticrew-admin-shell .gaticrew-shortcut-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 960px) {
+	body.gaticrew-admin-shell {
+		--gc-sidebar-width: 190px;
+	}
+
+	body.gaticrew-admin-shell #wpbody-content {
+		padding: 24px 22px 64px;
+	}
+
+	body.gaticrew-admin-shell .gaticrew-admin-brand__copy,
+	body.gaticrew-admin-shell .gaticrew-admin-profile__content {
+		display: none;
+	}
+}
+
+@media (max-width: 782px) {
+	body.gaticrew-admin-shell {
+		--gc-sidebar-width: 0px;
+	}
+
+	body.gaticrew-admin-shell.auto-fold #wpcontent,
+	body.gaticrew-admin-shell #wpcontent,
+	body.gaticrew-admin-shell #wpfooter {
+		margin-left: 0;
+	}
+
+	body.gaticrew-admin-shell #wpbody-content {
+		padding: 18px 14px 56px;
+	}
+
+	body.gaticrew-admin-shell #adminmenuwrap {
+		padding-top: 8px;
+	}
+
+	body.gaticrew-admin-shell .gaticrew-admin-brand,
+	body.gaticrew-admin-shell .gaticrew-admin-profile {
+		display: none;
+	}
+
+	body.gaticrew-admin-shell .wrap > h1,
+	body.gaticrew-admin-shell .wrap h1.wp-heading-inline {
+		font-size: 24px;
+	}
+
+	body.gaticrew-admin-shell .gaticrew-kpi-grid,
+	body.gaticrew-admin-shell .gaticrew-shortcut-grid {
+		grid-template-columns: 1fr;
+	}
+
+	body.gaticrew-admin-shell .search-box input[name="s"],
+	body.gaticrew-admin-shell .search-box input[type="search"] {
+		width: 100%;
+		min-width: 0;
+	}
+
+	body.gaticrew-admin-shell .wp-list-table tbody td,
+	body.gaticrew-admin-shell .wp-list-table tbody th,
+	body.gaticrew-admin-shell table.widefat tbody td,
+	body.gaticrew-admin-shell table.widefat tbody th {
+		padding: 12px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	body.gaticrew-admin-shell *,
+	body.gaticrew-admin-shell *::before,
+	body.gaticrew-admin-shell *::after {
+		transition: none !important;
+	}
+}
