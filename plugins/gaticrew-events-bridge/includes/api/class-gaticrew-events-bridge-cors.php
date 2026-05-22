@@ -9,6 +9,15 @@ defined( 'ABSPATH' ) || exit;
 
 final class GatiCrew_Events_Bridge_CORS {
 	/**
+	 * Registers CORS hardening hooks for public GatiCrew REST endpoints.
+	 *
+	 * @return void
+	 */
+	public static function init() {
+		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'disable_core_cors_for_gaticrew_routes' ), 0, 4 );
+	}
+
+	/**
 	 * Returns allowed frontend origins.
 	 *
 	 * @return array
@@ -17,6 +26,7 @@ final class GatiCrew_Events_Bridge_CORS {
 		$origins = array(
 			'https://gaticrew.com',
 			'http://127.0.0.1:5500',
+			'http://localhost:5500',
 		);
 
 		return array_values(
@@ -30,7 +40,28 @@ final class GatiCrew_Events_Bridge_CORS {
 	}
 
 	/**
-	 * Returns the request origin when it is explicitly allowed.
+	 * Prevents WordPress core from reflecting arbitrary Origin headers on
+	 * GatiCrew REST routes. The plugin sends a stricter allow-list based CORS
+	 * header later in each endpoint's response flow.
+	 *
+	 * @param bool             $served Whether the request has already been served.
+	 * @param WP_HTTP_Response $result REST result.
+	 * @param WP_REST_Request  $request REST request.
+	 * @param WP_REST_Server   $server REST server.
+	 * @return bool
+	 */
+	public static function disable_core_cors_for_gaticrew_routes( $served, $result, $request, $server ) {
+		unset( $result, $server );
+
+		if ( $request instanceof WP_REST_Request && 0 === strpos( $request->get_route(), '/gaticrew/v1/' ) ) {
+			remove_filter( 'rest_pre_serve_request', 'rest_send_cors_headers' );
+		}
+
+		return $served;
+	}
+
+	/**
+	 * Returns the request origin only when it is explicitly approved.
 	 *
 	 * @return string
 	 */
@@ -41,7 +72,7 @@ final class GatiCrew_Events_Bridge_CORS {
 			return $origin;
 		}
 
-		return 'https://gaticrew.com';
+		return '';
 	}
 
 	/**
@@ -51,7 +82,13 @@ final class GatiCrew_Events_Bridge_CORS {
 	 * @return void
 	 */
 	public static function send_headers( $methods ) {
-		header( 'Access-Control-Allow-Origin: ' . self::get_allowed_request_origin() );
+		$origin = self::get_allowed_request_origin();
+
+		if ( '' !== $origin ) {
+			header( 'Access-Control-Allow-Origin: ' . $origin );
+			header( 'Access-Control-Allow-Credentials: true' );
+		}
+
 		header( 'Access-Control-Allow-Methods: ' . sanitize_text_field( $methods ) );
 		header( 'Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce' );
 		header( 'Vary: Origin', false );
@@ -65,7 +102,13 @@ final class GatiCrew_Events_Bridge_CORS {
 	 * @return WP_REST_Response
 	 */
 	public static function add_response_headers( WP_REST_Response $response, $methods ) {
-		$response->header( 'Access-Control-Allow-Origin', self::get_allowed_request_origin() );
+		$origin = self::get_allowed_request_origin();
+
+		if ( '' !== $origin ) {
+			$response->header( 'Access-Control-Allow-Origin', $origin );
+			$response->header( 'Access-Control-Allow-Credentials', 'true' );
+		}
+
 		$response->header( 'Access-Control-Allow-Methods', sanitize_text_field( $methods ) );
 		$response->header( 'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-WP-Nonce' );
 		$response->header( 'Vary', 'Origin' );
@@ -78,3 +121,5 @@ final class GatiCrew_Events_Bridge_CORS {
 	 */
 	private function __construct() {}
 }
+
+GatiCrew_Events_Bridge_CORS::init();
