@@ -47,6 +47,7 @@ require_once GATICREW_EVENTS_BRIDGE_PATH . 'includes/class-gaticrew-events-bridg
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'includes/class-gaticrew-events-bridge-bookings.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'includes/class-gaticrew-events-bridge-events.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'includes/class-gaticrew-events-bridge-products.php';
+require_once GATICREW_EVENTS_BRIDGE_PATH . 'includes/class-gaticrew-events-bridge-event-tickets-sync.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'database/class-gaticrew-events-bridge-schema.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'roles/class-gaticrew-events-bridge-role-manager.php';
 

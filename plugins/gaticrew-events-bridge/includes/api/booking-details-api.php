@@ -3,8 +3,9 @@
  * Frontend booking details REST API.
  *
  * This endpoint returns the post-payment booking payload consumed by the
- * gaticrew.com booking confirmation page. It reads from the attendee table
- * first because attendees are the source of truth for QR/check-in state.
+ * gaticrew.com booking confirmation page. The local GatiCrew attendee table
+ * identifies the booking, while Event Tickets attendee posts remain the source
+ * of truth for QR security codes and QR check-in URLs.
  *
  * @package GatiCrew_Events_Bridge
  */
@@ -141,7 +142,9 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			return self::error_response( 'missing_order', __( 'Booking order could not be found.', 'gaticrew-events-bridge' ), array( 'order_id' => $order_id ), 404 );
 		}
 
-		$event_id = self::get_event_id( $attendees, $order );
+		$event_id                = self::get_event_id( $attendees, $order );
+		$event_details           = self::get_event_details( $event_id );
+		$event_tickets_attendees = self::get_event_tickets_attendees( $order, $event_id, $attendees );
 		$response = rest_ensure_response(
 			array(
 				'success'              => true,
@@ -151,9 +154,10 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 				'payment_status'       => self::get_payment_status( $order ),
 				'booking_status'       => self::get_booking_status( $attendees ),
 				'booking_created_date' => self::get_booking_created_date( $attendees, $order ),
-				'event'                => self::get_event_details( $event_id ),
+				'event_name'           => ! empty( $event_details['title'] ) ? $event_details['title'] : '',
+				'event'                => $event_details,
 				'customer'             => self::get_customer_details( $order ),
-				'attendees'            => self::format_attendees( $attendees ),
+				'attendees'            => self::format_attendees( $attendees, $event_tickets_attendees ),
 				'ticket_pdf_url'       => self::get_ticket_pdf_url( $attendees, $order ),
 				'amount'               => (float) wc_format_decimal( $order->get_total(), wc_get_price_decimals() ),
 				'currency'             => sanitize_text_field( $order->get_currency() ),
@@ -346,30 +350,496 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	 * Formats attendee rows for the frontend.
 	 *
 	 * @param array $attendees Attendee rows.
+	 * @param array $event_tickets_attendees Real Event Tickets attendee data.
 	 * @return array
 	 */
-	private static function format_attendees( array $attendees ) {
+	private static function format_attendees( array $attendees, array $event_tickets_attendees = array() ) {
 		$formatted = array();
+		$used      = array();
 
-		foreach ( $attendees as $attendee ) {
-			$attendee_id = isset( $attendee['id'] ) ? absint( $attendee['id'] ) : 0;
-			$name        = isset( $attendee['attendee_name'] ) ? sanitize_text_field( $attendee['attendee_name'] ) : '';
+		foreach ( $attendees as $index => $attendee ) {
+			$gaticrew_attendee_id = isset( $attendee['id'] ) ? absint( $attendee['id'] ) : 0;
+			$name                 = isset( $attendee['attendee_name'] ) ? sanitize_text_field( $attendee['attendee_name'] ) : '';
 
 			if ( '' === $name && ! empty( $attendee['attendee_names'] ) && is_array( $attendee['attendee_names'] ) ) {
 				$name = sanitize_text_field( reset( $attendee['attendee_names'] ) );
 			}
 
+			$real_attendee = self::match_event_tickets_attendee( $attendee, $event_tickets_attendees, $used, $index );
+			$real_id       = ! empty( $real_attendee['attendee_id'] ) ? absint( $real_attendee['attendee_id'] ) : 0;
+			$real_qr_url   = ! empty( $real_attendee['attendee_qr_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_url'] ) : '';
+			$real_qr_image = ! empty( $real_attendee['attendee_qr_image_url'] ) ? esc_url_raw( $real_attendee['attendee_qr_image_url'] ) : '';
+
 			$formatted[] = array(
-				'attendee_id'    => $attendee_id,
-				'attendee_name'  => $name,
-				'attendee_email' => isset( $attendee['attendee_email'] ) ? sanitize_email( $attendee['attendee_email'] ) : '',
-				'checkin_status' => self::get_attendee_checkin_status( $attendee ),
-				'qr_url'         => self::get_attendee_qr_url( $attendee ),
-				'validation_url' => self::get_attendee_validation_url( $attendee ),
+				'attendee_id'               => $real_id,
+				'gaticrew_attendee_id'      => $gaticrew_attendee_id,
+				'attendee_name'             => ! empty( $real_attendee['attendee_name'] ) ? $real_attendee['attendee_name'] : $name,
+				'attendee_email'            => ! empty( $real_attendee['attendee_email'] ) ? $real_attendee['attendee_email'] : ( isset( $attendee['attendee_email'] ) ? sanitize_email( $attendee['attendee_email'] ) : '' ),
+				'attendee_ticket_id'        => ! empty( $real_attendee['attendee_ticket_id'] ) ? $real_attendee['attendee_ticket_id'] : '',
+				'attendee_ticket_unique_id' => ! empty( $real_attendee['attendee_ticket_unique_id'] ) ? $real_attendee['attendee_ticket_unique_id'] : '',
+				'attendee_qr_token'         => ! empty( $real_attendee['attendee_qr_token'] ) ? $real_attendee['attendee_qr_token'] : '',
+				'attendee_qr_url'           => $real_qr_url,
+				'attendee_qr_image_url'     => $real_qr_image,
+				'checkin_status'            => ! empty( $real_attendee['checkin_status'] ) ? $real_attendee['checkin_status'] : self::get_attendee_checkin_status( $attendee ),
+				'qr_url'                    => $real_qr_image,
+				'validation_url'            => $real_qr_url,
 			);
 		}
 
 		return $formatted;
+	}
+
+	/**
+	 * Gets real Event Tickets attendees connected to this booking.
+	 *
+	 * The security code stored on Event Tickets attendee posts is the QR token
+	 * that TEC validates during QR check-in. This method only reads stored TEC
+	 * attendee data and does not generate replacement tokens.
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @param int      $event_id Event post ID.
+	 * @param array    $booking_attendees GatiCrew attendee rows.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendees( WC_Order $order, $event_id, array $booking_attendees ) {
+		$ids = self::get_event_tickets_attendee_ids_by_order( absint( $order->get_id() ), absint( $event_id ) );
+
+		if ( empty( $ids ) && $event_id ) {
+			$ids = self::get_event_tickets_attendee_ids_by_event_and_identity( absint( $event_id ), $booking_attendees, $order );
+		}
+
+		return self::normalize_event_tickets_attendees( $ids );
+	}
+
+	/**
+	 * Finds Event Tickets attendee post IDs by order relation meta.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @param int $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_order( $order_id, $event_id ) {
+		global $wpdb;
+
+		$order_id = absint( $order_id );
+
+		if ( ! $order_id ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$order_keys = self::get_event_tickets_meta_keys( 'order' );
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array_merge( $order_keys, array( (string) $order_id ) );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} order_pm
+				ON order_pm.post_id = p.ID
+				AND order_pm.meta_key IN (" . self::get_placeholders( $order_keys ) . ")
+				AND order_pm.meta_value = %s
+		";
+
+		if ( $event_id ) {
+			$sql     .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params = array_merge( $params, $post_types );
+
+		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * Finds Event Tickets attendee IDs by event and booking attendee identity.
+	 *
+	 * @param int      $event_id Event post ID.
+	 * @param array    $booking_attendees GatiCrew attendee rows.
+	 * @param WC_Order $order WooCommerce order.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_event_and_identity( $event_id, array $booking_attendees, WC_Order $order ) {
+		global $wpdb;
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array_merge( $event_keys, array( (string) absint( $event_id ) ) );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} event_pm
+				ON event_pm.post_id = p.ID
+				AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+				AND event_pm.meta_value = %s
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params     = array_merge( $params, $post_types );
+		$candidates = self::normalize_event_tickets_attendees( array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$matched    = array();
+		$used       = array();
+
+		foreach ( $booking_attendees as $index => $booking_attendee ) {
+			$real_attendee = self::match_event_tickets_attendee( $booking_attendee, $candidates, $used, $index );
+
+			if ( ! empty( $real_attendee['attendee_id'] ) ) {
+				$matched[] = absint( $real_attendee['attendee_id'] );
+			}
+		}
+
+		return $matched;
+	}
+
+	/**
+	 * Normalizes Event Tickets attendee posts to API fields.
+	 *
+	 * @param array $attendee_ids Event Tickets attendee post IDs.
+	 * @return array
+	 */
+	private static function normalize_event_tickets_attendees( array $attendee_ids ) {
+		$normalized = array();
+
+		foreach ( array_unique( array_map( 'absint', $attendee_ids ) ) as $attendee_id ) {
+			$attendee = get_post( $attendee_id );
+
+			if ( ! $attendee instanceof WP_Post ) {
+				continue;
+			}
+
+			$provider_data = self::get_event_tickets_attendee_data( $attendee_id );
+			$security_code = ! empty( $provider_data['security_code'] ) ? sanitize_text_field( $provider_data['security_code'] ) : self::get_event_tickets_security_code( $attendee_id );
+			$event_id      = ! empty( $provider_data['event_id'] ) ? absint( $provider_data['event_id'] ) : absint( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'event' ) ) );
+			$qr_ticket_id  = ! empty( $provider_data['qr_ticket_id'] ) ? absint( $provider_data['qr_ticket_id'] ) : $attendee_id;
+			$unique_id     = ! empty( $provider_data['ticket_id'] ) ? sanitize_text_field( $provider_data['ticket_id'] ) : self::get_first_post_meta( $attendee_id, array( '_unique_id' ) );
+			$ticket_meta   = self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'ticket' ) );
+			$ticket_id     = absint( $ticket_meta );
+			$qr_url        = self::get_event_tickets_qr_url( $qr_ticket_id, $event_id, $security_code );
+
+			$normalized[] = array(
+				'attendee_id'               => $attendee_id,
+				'attendee_name'             => ! empty( $provider_data['holder_name'] ) ? sanitize_text_field( $provider_data['holder_name'] ) : sanitize_text_field( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'name' ) ) ),
+				'attendee_email'            => ! empty( $provider_data['holder_email'] ) ? sanitize_email( $provider_data['holder_email'] ) : sanitize_email( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'email' ) ) ),
+				'attendee_ticket_id'        => $ticket_id,
+				'attendee_ticket_unique_id' => '' !== $unique_id ? sanitize_text_field( $unique_id ) : sanitize_text_field( $ticket_meta ),
+				'attendee_qr_token'         => sanitize_text_field( $security_code ),
+				'attendee_qr_url'           => $qr_url,
+				'attendee_qr_image_url'     => self::get_event_tickets_qr_image_url( $provider_data, $qr_url, $qr_ticket_id, $event_id, $security_code ),
+				'checkin_status'            => self::get_event_tickets_checkin_status( $attendee_id ),
+			);
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Matches a GatiCrew attendee row to a real Event Tickets attendee.
+	 *
+	 * @param array $booking_attendee GatiCrew attendee row.
+	 * @param array $event_tickets_attendees Event Tickets attendees.
+	 * @param array $used Used Event Tickets attendee IDs.
+	 * @param int   $index Current attendee index.
+	 * @return array
+	 */
+	private static function match_event_tickets_attendee( array $booking_attendee, array $event_tickets_attendees, array &$used, $index = 0 ) {
+		if ( empty( $event_tickets_attendees ) ) {
+			return array();
+		}
+
+		$name  = isset( $booking_attendee['attendee_name'] ) ? sanitize_text_field( $booking_attendee['attendee_name'] ) : '';
+		$email = isset( $booking_attendee['attendee_email'] ) ? sanitize_email( $booking_attendee['attendee_email'] ) : '';
+
+		if ( '' === $name && ! empty( $booking_attendee['attendee_names'] ) && is_array( $booking_attendee['attendee_names'] ) ) {
+			$name = sanitize_text_field( reset( $booking_attendee['attendee_names'] ) );
+		}
+
+		foreach ( $event_tickets_attendees as $real_attendee ) {
+			$real_id = ! empty( $real_attendee['attendee_id'] ) ? absint( $real_attendee['attendee_id'] ) : 0;
+
+			if ( ! $real_id || in_array( $real_id, $used, true ) ) {
+				continue;
+			}
+
+			$real_name  = isset( $real_attendee['attendee_name'] ) ? sanitize_text_field( $real_attendee['attendee_name'] ) : '';
+			$real_email = isset( $real_attendee['attendee_email'] ) ? sanitize_email( $real_attendee['attendee_email'] ) : '';
+
+			if (
+				( '' !== $email && '' !== $real_email && strtolower( $email ) === strtolower( $real_email ) && ( '' === $name || '' === $real_name || strtolower( $name ) === strtolower( $real_name ) ) )
+				|| ( '' !== $name && '' !== $real_name && strtolower( $name ) === strtolower( $real_name ) )
+			) {
+				$used[] = $real_id;
+				return $real_attendee;
+			}
+		}
+
+		if ( isset( $event_tickets_attendees[ $index ] ) ) {
+			$real_id = absint( $event_tickets_attendees[ $index ]['attendee_id'] );
+
+			if ( $real_id && ! in_array( $real_id, $used, true ) ) {
+				$used[] = $real_id;
+				return $event_tickets_attendees[ $index ];
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Returns Event Tickets attendee post types across supported providers.
+	 *
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_post_types() {
+		return array(
+			'tribe_rsvp_attendees',
+			'tribe_tpp_attendees',
+			'tec_tc_attendee',
+			'tribe_wooticket',
+		);
+	}
+
+	/**
+	 * Returns Event Tickets attendee meta keys by purpose.
+	 *
+	 * @param string $type Meta key type.
+	 * @return array
+	 */
+	private static function get_event_tickets_meta_keys( $type ) {
+		$keys = array(
+			'order'    => array( '_gaticrew_woo_order_id', '_tribe_rsvp_order', '_tribe_tpp_order', '_tec_tickets_commerce_order', '_tribe_wooticket_order', '_tribe_tickets_order_id', '_tribe_tickets_order' ),
+			'event'    => array( '_tribe_rsvp_event', '_tribe_tpp_event', '_tec_tickets_commerce_event', '_tribe_wooticket_event', '_tribe_tickets_post_id' ),
+			'ticket'   => array( '_tribe_rsvp_product', '_tribe_tpp_product', '_tec_tickets_commerce_ticket', '_tribe_wooticket_product', '_tribe_tickets_ticket_id' ),
+			'security' => array( '_tribe_rsvp_security_code', '_tribe_tpp_security_code', '_tec_tickets_commerce_security_code', '_tribe_wooticket_security_code', '_tribe_tickets_security_code' ),
+			'name'     => array( '_tribe_rsvp_full_name', '_tribe_tpp_full_name', '_tribe_tickets_full_name', '_tec_tickets_commerce_full_name', '_tribe_wooticket_full_name' ),
+			'email'    => array( '_tribe_rsvp_email', '_tribe_tpp_email', '_tribe_tickets_email', '_tec_tickets_commerce_email', '_tribe_wooticket_email' ),
+			'checkin'  => array( '_tribe_rsvp_checkedin', '_tribe_tpp_checkedin', '_tec_tickets_commerce_checked_in', '_tribe_wooticket_checkedin', '_tribe_tickets_checkedin' ),
+		);
+
+		return isset( $keys[ $type ] ) ? $keys[ $type ] : array();
+	}
+
+	/**
+	 * Reads a stored Event Tickets security code from attendee meta.
+	 *
+	 * @param int $attendee_id Event Tickets attendee post ID.
+	 * @return string
+	 */
+	private static function get_event_tickets_security_code( $attendee_id ) {
+		$provider = self::get_event_tickets_provider( $attendee_id );
+
+		if ( is_object( $provider ) && ! empty( $provider->security_code ) ) {
+			$value = get_post_meta( absint( $attendee_id ), sanitize_text_field( $provider->security_code ), true );
+
+			if ( '' !== (string) $value ) {
+				return sanitize_text_field( $value );
+			}
+		}
+
+		return sanitize_text_field( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'security' ) ) );
+	}
+
+	/**
+	 * Reads the canonical Event Tickets attendee array from the active provider.
+	 *
+	 * Provider data contains TEC's ticket ID, QR attendee ID and security code
+	 * exactly as used by ticket emails and QR check-in.
+	 *
+	 * @param int $attendee_id Event Tickets attendee post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_data( $attendee_id ) {
+		$provider = self::get_event_tickets_provider( $attendee_id );
+
+		if ( ! is_object( $provider ) || ! method_exists( $provider, 'get_attendees_by_id' ) ) {
+			return array();
+		}
+
+		try {
+			$attendees = $provider->get_attendees_by_id( absint( $attendee_id ) );
+			$attendee  = is_array( $attendees ) ? reset( $attendees ) : array();
+
+			return is_array( $attendee ) ? $attendee : array();
+		} catch ( Throwable $exception ) {
+			return array();
+		}
+	}
+
+	/**
+	 * Builds the official Event Tickets QR check-in URL from stored data.
+	 *
+	 * @param int    $attendee_id Event Tickets attendee post ID.
+	 * @param int    $event_id Event post ID.
+	 * @param string $security_code Stored Event Tickets security code.
+	 * @return string
+	 */
+	private static function get_event_tickets_qr_url( $attendee_id, $event_id, $security_code ) {
+		$attendee_id   = absint( $attendee_id );
+		$event_id      = absint( $event_id );
+		$security_code = sanitize_text_field( $security_code );
+
+		if ( ! $attendee_id || ! $event_id || '' === $security_code ) {
+			return '';
+		}
+
+		if ( function_exists( 'tribe' ) && class_exists( '\TEC\Tickets\QR\Connector' ) ) {
+			try {
+				$connector = tribe( \TEC\Tickets\QR\Connector::class );
+
+				if ( is_object( $connector ) && method_exists( $connector, 'get_checkin_url' ) ) {
+					return esc_url_raw( $connector->get_checkin_url( $attendee_id, $event_id, $security_code ) );
+				}
+			} catch ( Throwable $exception ) {
+				return '';
+			}
+		}
+
+		return esc_url_raw(
+			add_query_arg(
+				array(
+					'event_qr_code' => 1,
+					'ticket_id'     => $attendee_id,
+					'event_id'      => $event_id,
+					'security_code' => $security_code,
+					'path'          => function_exists( 'tribe_tickets_rest_url_prefix' ) ? tribe_tickets_rest_url_prefix() . '/qr' : 'tribe/tickets/v1/qr',
+				),
+				home_url( '/' )
+			)
+		);
+	}
+
+	/**
+	 * Returns the Event Tickets-generated QR image URL when the QR connector can provide it.
+	 *
+	 * @param array  $ticket_data Event Tickets attendee/ticket data.
+	 * @param string $qr_url Official Event Tickets QR check-in URL.
+	 * @param int    $attendee_id Event Tickets attendee post ID.
+	 * @param int    $event_id Event post ID.
+	 * @param string $security_code Stored Event Tickets security code.
+	 * @return string
+	 */
+	private static function get_event_tickets_qr_image_url( array $ticket_data, $qr_url, $attendee_id, $event_id, $security_code ) {
+		if ( ! function_exists( 'tribe' ) || ! class_exists( '\TEC\Tickets\QR\Connector' ) ) {
+			return '';
+		}
+
+		try {
+			$connector = tribe( \TEC\Tickets\QR\Connector::class );
+
+			if ( ! is_object( $connector ) ) {
+				return '';
+			}
+
+			$ticket_data = array_merge(
+				$ticket_data,
+				array(
+					'qr_ticket_id'  => absint( $attendee_id ),
+					'event_id'      => absint( $event_id ),
+					'security_code' => sanitize_text_field( $security_code ),
+				)
+			);
+
+			if ( method_exists( $connector, 'get_image_url_from_ticket_data' ) ) {
+				$image_url = $connector->get_image_url_from_ticket_data( $ticket_data );
+
+				if ( $image_url ) {
+					return esc_url_raw( $image_url );
+				}
+			}
+
+			if ( method_exists( $connector, 'get_image_url_for_link' ) && '' !== (string) $qr_url ) {
+				$image_url = $connector->get_image_url_for_link( esc_url_raw( $qr_url ) );
+
+				return $image_url ? esc_url_raw( $image_url ) : '';
+			}
+		} catch ( Throwable $exception ) {
+			return '';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Returns Event Tickets check-in status from provider meta.
+	 *
+	 * @param int $attendee_id Event Tickets attendee post ID.
+	 * @return string
+	 */
+	private static function get_event_tickets_checkin_status( $attendee_id ) {
+		$provider = self::get_event_tickets_provider( $attendee_id );
+		$keys     = self::get_event_tickets_meta_keys( 'checkin' );
+
+		if ( is_object( $provider ) && ! empty( $provider->checkin_key ) ) {
+			array_unshift( $keys, sanitize_text_field( $provider->checkin_key ) );
+		}
+
+		array_unshift( $keys, '_tribe_qr_status' );
+
+		$checked_in = self::get_first_post_meta( $attendee_id, array_unique( $keys ) );
+
+		if ( function_exists( 'tribe_is_truthy' ) ) {
+			return tribe_is_truthy( $checked_in ) ? 'checked_in' : 'confirmed';
+		}
+
+		return filter_var( $checked_in, FILTER_VALIDATE_BOOLEAN ) ? 'checked_in' : 'confirmed';
+	}
+
+	/**
+	 * Returns the Event Tickets provider object for an attendee.
+	 *
+	 * @param int $attendee_id Event Tickets attendee post ID.
+	 * @return object|null
+	 */
+	private static function get_event_tickets_provider( $attendee_id ) {
+		if ( ! function_exists( 'tribe' ) ) {
+			return null;
+		}
+
+		try {
+			$data_api = tribe( 'tickets.data_api' );
+
+			return is_object( $data_api ) && method_exists( $data_api, 'get_ticket_provider' ) ? $data_api->get_ticket_provider( absint( $attendee_id ) ) : null;
+		} catch ( Throwable $exception ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Reads the first non-empty post meta value from a list of keys.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $keys Meta keys.
+	 * @return string
+	 */
+	private static function get_first_post_meta( $post_id, array $keys ) {
+		foreach ( $keys as $key ) {
+			$value = get_post_meta( absint( $post_id ), sanitize_text_field( $key ), true );
+
+			if ( '' !== (string) $value ) {
+				return (string) $value;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Returns SQL placeholders for an array.
+	 *
+	 * @param array $values Values.
+	 * @return string
+	 */
+	private static function get_placeholders( array $values ) {
+		return implode( ', ', array_fill( 0, count( $values ), '%s' ) );
 	}
 
 	/**
@@ -386,44 +856,6 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		$status = isset( $attendee['booking_status'] ) ? sanitize_key( $attendee['booking_status'] ) : '';
 
 		return '' !== $status ? $status : 'confirmed';
-	}
-
-	/**
-	 * Returns attendee QR image URL.
-	 *
-	 * @param array $attendee Attendee row.
-	 * @return string
-	 */
-	private static function get_attendee_qr_url( array $attendee ) {
-		$qr_code = isset( $attendee['qr_code'] ) ? esc_url_raw( $attendee['qr_code'] ) : '';
-
-		if ( '' !== $qr_code ) {
-			return $qr_code;
-		}
-
-		$token = ! empty( $attendee['id'] ) ? (string) absint( $attendee['id'] ) : '';
-
-		if ( '' === $token && isset( $attendee['qr_token'] ) ) {
-			$token = GatiCrew_Events_Bridge_QR_Tokens::sanitize_token( $attendee['qr_token'] );
-		}
-
-		return '' !== $token ? esc_url_raw( GatiCrew_Events_Bridge_QR_Tokens::get_qr_image_url( $token ) ) : '';
-	}
-
-	/**
-	 * Returns attendee QR validation URL.
-	 *
-	 * @param array $attendee Attendee row.
-	 * @return string
-	 */
-	private static function get_attendee_validation_url( array $attendee ) {
-		$token = ! empty( $attendee['id'] ) ? (string) absint( $attendee['id'] ) : '';
-
-		if ( '' === $token && isset( $attendee['qr_token'] ) ) {
-			$token = GatiCrew_Events_Bridge_QR_Tokens::sanitize_token( $attendee['qr_token'] );
-		}
-
-		return '' !== $token ? esc_url_raw( GatiCrew_Events_Bridge_QR_Tokens::get_validation_url( $token ) ) : '';
 	}
 
 	/**

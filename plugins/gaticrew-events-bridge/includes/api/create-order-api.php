@@ -181,6 +181,7 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			}
 
 			self::create_attendee_rows( $order, $payload, $event_id, $product_id );
+			self::sync_event_tickets_attendees( $order );
 
 			$booking_id = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $payload['booking_id'] );
 			self::debug_log( 'Create-order completed. Order ID: ' . absint( $order->get_id() ) . ' Booking ID: ' . $booking_id );
@@ -647,6 +648,25 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	}
 
 	/**
+	 * Creates real Event Tickets attendees through TEC's official provider API.
+	 *
+	 * The Woo order is created outside the normal Event Tickets checkout flow,
+	 * so this explicit sync is required for TEC QR security codes and scanner
+	 * validation to exist.
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @return void
+	 */
+	private static function sync_event_tickets_attendees( WC_Order $order ) {
+		if ( ! class_exists( 'GatiCrew_Events_Bridge_Event_Tickets_Sync' ) ) {
+			self::debug_log( 'Event Tickets sync helper missing' );
+			return;
+		}
+
+		GatiCrew_Events_Bridge_Event_Tickets_Sync::sync_order( $order );
+	}
+
+	/**
 	 * Finds linked WooCommerce product ID from event meta.
 	 *
 	 * @param int $event_id Event ID.
@@ -755,6 +775,7 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			'qr/class-gaticrew-events-bridge-qr-tokens.php',
 			'qr/class-gaticrew-events-bridge-qr-code.php',
 			'includes/class-gaticrew-events-bridge-ticket-assets.php',
+			'includes/class-gaticrew-events-bridge-event-tickets-sync.php',
 			'attendees/class-gaticrew-events-bridge-attendees-repository.php',
 		);
 

@@ -119,6 +119,7 @@ final class GatiCrew_Events_Bridge_Verify_Payment_API {
 		try {
 			$booking_id = self::ensure_booking_id( $order );
 			$attendees  = self::ensure_attendees_for_order( $order, $booking_id );
+			self::sync_event_tickets_attendees( $order );
 			self::ensure_attendee_qr_codes( $attendees );
 			self::complete_order_payment( $order, $payload );
 		} catch ( Exception $exception ) {
@@ -351,6 +352,23 @@ final class GatiCrew_Events_Bridge_Verify_Payment_API {
 			// TODO: Trigger PDF regeneration here when final ticket PDFs need to
 			// include payment receipt data from the Razorpay SDK response.
 		}
+	}
+
+	/**
+	 * Ensures real Event Tickets attendees exist before the paid order completes.
+	 *
+	 * This keeps direct Woo order creation aligned with the TEC attendee/QR
+	 * model used by Event Tickets scanner validation.
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @return void
+	 */
+	private static function sync_event_tickets_attendees( WC_Order $order ) {
+		if ( ! class_exists( 'GatiCrew_Events_Bridge_Event_Tickets_Sync' ) ) {
+			return;
+		}
+
+		GatiCrew_Events_Bridge_Event_Tickets_Sync::sync_order( $order );
 	}
 
 	/**
@@ -726,6 +744,7 @@ final class GatiCrew_Events_Bridge_Verify_Payment_API {
 			'qr/class-gaticrew-events-bridge-qr-tokens.php',
 			'qr/class-gaticrew-events-bridge-qr-code.php',
 			'includes/class-gaticrew-events-bridge-ticket-assets.php',
+			'includes/class-gaticrew-events-bridge-event-tickets-sync.php',
 			'attendees/class-gaticrew-events-bridge-attendees-repository.php',
 		);
 
