@@ -214,6 +214,146 @@ final class GatiCrew_Events_Bridge_Attendees_Repository {
 	}
 
 	/**
+	 * Gets one GatiCrew attendee row by the official TEC attendee post ID.
+	 *
+	 * @param int $tec_attendee_post_id Event Tickets attendee post ID.
+	 * @return array|null
+	 */
+	public function get_by_tec_attendee_post_id( $tec_attendee_post_id ) {
+		global $wpdb;
+
+		$tec_attendee_post_id = absint( $tec_attendee_post_id );
+
+		if ( ! $tec_attendee_post_id ) {
+			return null;
+		}
+
+		$table = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
+		$row   = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT a.*, p.post_title AS event_name
+				FROM {$table} a
+				LEFT JOIN {$wpdb->posts} p ON a.event_id = p.ID
+				WHERE a.tec_attendee_post_id = %d
+				LIMIT 1",
+				$tec_attendee_post_id
+			),
+			ARRAY_A
+		);
+
+		return is_array( $row ) ? $this->normalize_row( $row ) : null;
+	}
+
+	/**
+	 * Gets one GatiCrew attendee row by the official TEC security code.
+	 *
+	 * @param string $security_code Event Tickets security code.
+	 * @param int    $event_id Optional event ID constraint.
+	 * @return array|null
+	 */
+	public function get_by_tec_security_code( $security_code, $event_id = 0 ) {
+		global $wpdb;
+
+		$security_code = sanitize_text_field( (string) $security_code );
+		$event_id      = absint( $event_id );
+
+		if ( '' === $security_code ) {
+			return null;
+		}
+
+		$table  = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
+		$where  = 'a.tec_security_code = %s';
+		$params = array( $security_code );
+
+		if ( $event_id ) {
+			$where   .= ' AND a.event_id = %d';
+			$params[] = $event_id;
+		}
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT a.*, p.post_title AS event_name
+				FROM {$table} a
+				LEFT JOIN {$wpdb->posts} p ON a.event_id = p.ID
+				WHERE {$where}
+				LIMIT 1",
+				$params
+			),
+			ARRAY_A
+		);
+
+		return is_array( $row ) ? $this->normalize_row( $row ) : null;
+	}
+
+	/**
+	 * Gets one row by order, booking, and ticket index.
+	 *
+	 * @param int    $order_id WooCommerce order ID.
+	 * @param string $booking_id Booking ID.
+	 * @param int    $ticket_index One-based ticket index.
+	 * @return array|null
+	 */
+	public function get_by_order_booking_ticket_index( $order_id, $booking_id, $ticket_index ) {
+		$row_id = $this->get_id_by_order_booking_ticket_index( $order_id, $booking_id, $ticket_index );
+
+		return $row_id ? $this->get_by_id( $row_id ) : null;
+	}
+
+	/**
+	 * Finds one GatiCrew attendee row by event and attendee identity.
+	 *
+	 * This is a guarded migration fallback for rows created before the bridge
+	 * persisted direct TEC attendee IDs.
+	 *
+	 * @param int    $event_id Event post ID.
+	 * @param string $name Attendee name.
+	 * @param string $email Attendee email.
+	 * @return array|null
+	 */
+	public function get_by_event_identity( $event_id, $name, $email ) {
+		global $wpdb;
+
+		$event_id = absint( $event_id );
+		$name     = sanitize_text_field( (string) $name );
+		$email    = sanitize_email( $email );
+
+		if ( ! $event_id || ( '' === $name && '' === $email ) ) {
+			return null;
+		}
+
+		$table  = GatiCrew_Events_Bridge_Schema::get_attendees_table_name();
+		$where  = array( 'a.event_id = %d' );
+		$params = array( $event_id );
+
+		if ( '' !== $email ) {
+			$where[]  = 'a.attendee_email = %s';
+			$params[] = $email;
+		}
+
+		if ( '' !== $name ) {
+			$like     = '%' . $wpdb->esc_like( $name ) . '%';
+			$where[]  = '(a.attendee_name = %s OR a.attendee_names LIKE %s)';
+			$params[] = $name;
+			$params[] = $like;
+		}
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT a.*, p.post_title AS event_name
+				FROM {$table} a
+				LEFT JOIN {$wpdb->posts} p ON a.event_id = p.ID
+				WHERE " . implode( ' AND ', $where ) . '
+				ORDER BY a.id DESC
+				LIMIT 1',
+				$params
+			),
+			ARRAY_A
+		);
+
+		return is_array( $row ) ? $this->normalize_row( $row ) : null;
+	}
+
+	/**
 	 * Gets one attendee booking by QR token, booking ID, or attendee row ID.
 	 *
 	 * @param string $token QR token or booking ID.

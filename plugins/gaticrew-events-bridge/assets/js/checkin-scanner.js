@@ -147,20 +147,38 @@
 		var value = String( rawValue || '' ).trim();
 		var routeMatch;
 		var directMatch;
+		var decodedValue;
+		var url;
+		var params;
 
 		if ( ! value ) {
 			return '';
 		}
 
-		routeMatch = value.match( /\/(?:checkin|gaticrew-checkin)\/((?:GCQR-[A-Za-z0-9]{8,32})|(?:GC-[0-9]{4}-[A-Za-z0-9]{4,32})|(?:[0-9]{1,20}))\/?/i );
+		decodedValue = value.replace( /&amp;/g, '&' );
+
+		try {
+			url = new URL( decodedValue, window.location.origin );
+			params = url.searchParams;
+
+			if (
+				params.has( 'event_qr_code' ) ||
+				( params.has( 'ticket_id' ) && params.has( 'security_code' ) ) ||
+				( params.has( 'attendee_id' ) && params.has( 'security_code' ) )
+			) {
+				return decodedValue;
+			}
+		} catch ( error ) {}
+
+		routeMatch = decodedValue.match( /\/(?:checkin|gaticrew-checkin)\/((?:GCQR-[A-Za-z0-9]{8,32})|(?:GC-[0-9]{4}-[A-Za-z0-9]{4,32})|(?:[0-9]{1,20}))\/?/i );
 
 		if ( routeMatch && routeMatch[ 1 ] ) {
 			return routeMatch[ 1 ].toUpperCase();
 		}
 
-		directMatch = value.match( /^(?:GCQR-[A-Za-z0-9]{8,32}|GC-[0-9]{4}-[A-Za-z0-9]{4,32}|[0-9]{1,20})$/i );
+		directMatch = decodedValue.match( /^(?:GCQR-[A-Za-z0-9]{8,32}|GC-[0-9]{4}-[A-Za-z0-9]{4,32}|[0-9]{1,20})$/i );
 
-		return directMatch ? value.toUpperCase() : '';
+		return directMatch ? decodedValue.toUpperCase() : '';
 	}
 
 	function stopScanner( announce ) {
