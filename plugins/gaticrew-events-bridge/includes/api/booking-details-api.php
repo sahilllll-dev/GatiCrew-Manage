@@ -402,13 +402,80 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	 * @return array
 	 */
 	private static function get_event_tickets_attendees( WC_Order $order, $event_id, array $booking_attendees ) {
-		$ids = self::get_event_tickets_attendee_ids_by_order( absint( $order->get_id() ), absint( $event_id ) );
+		$booking_id = self::get_booking_id_from_attendees( $booking_attendees, $order );
+		$ids        = array();
+
+		if ( '' !== $booking_id ) {
+			$ids = self::get_event_tickets_attendee_ids_by_booking( $booking_id, absint( $event_id ) );
+		}
+
+		if ( empty( $ids ) ) {
+			$ids = self::get_event_tickets_attendee_ids_by_order( absint( $order->get_id() ), absint( $event_id ) );
+		}
 
 		if ( empty( $ids ) && $event_id ) {
 			$ids = self::get_event_tickets_attendee_ids_by_event_and_identity( absint( $event_id ), $booking_attendees, $order );
 		}
 
+		self::debug_log( 'Resolved Event Tickets attendee IDs for booking ' . $booking_id . ': ' . wp_json_encode( array_values( array_unique( array_map( 'absint', $ids ) ) ) ) );
+
 		return self::normalize_event_tickets_attendees( $ids );
+	}
+
+	/**
+	 * Finds Event Tickets attendees by the bridge booking ID meta.
+	 *
+	 * @param string $booking_id GatiCrew booking ID.
+	 * @param int    $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_booking( $booking_id, $event_id ) {
+		global $wpdb;
+
+		$booking_id = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $booking_id );
+
+		if ( '' === $booking_id ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array( $booking_id );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} booking_pm
+				ON booking_pm.post_id = p.ID
+				AND booking_pm.meta_key = '_gaticrew_booking_id'
+				AND booking_pm.meta_value = %s
+		";
+
+		if ( $event_id ) {
+			$sql    .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY CAST(COALESCE(ticket_index_pm.meta_value, '0') AS UNSIGNED) ASC, p.ID ASC
+		";
+		$sql  = str_replace(
+			'WHERE p.post_type',
+			"LEFT JOIN {$wpdb->postmeta} ticket_index_pm
+				ON ticket_index_pm.post_id = p.ID
+				AND ticket_index_pm.meta_key = '_gaticrew_ticket_index'
+			WHERE p.post_type",
+			$sql
+		);
+		$params = array_merge( $params, $post_types );
+
+		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -518,10 +585,15 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			}
 
 			$provider_data = self::get_event_tickets_attendee_data( $attendee_id );
-			$security_code = ! empty( $provider_data['security_code'] ) ? sanitize_text_field( $provider_data['security_code'] ) : self::get_event_tickets_security_code( $attendee_id );
-			$event_id      = ! empty( $provider_data['event_id'] ) ? absint( $provider_data['event_id'] ) : absint( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'event' ) ) );
+			self::debug_event_tickets_attendee_meta( $attendee_id, $attendee );
+
+			$security_code = self::get_event_tickets_security_code( $attendee_id );
+			$security_code = '' !== $security_code ? $security_code : ( ! empty( $provider_data['security_code'] ) ? sanitize_text_field( $provider_data['security_code'] ) : '' );
+			$event_id      = absint( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'event' ) ) );
+			$event_id      = $event_id ? $event_id : ( ! empty( $provider_data['event_id'] ) ? absint( $provider_data['event_id'] ) : 0 );
 			$qr_ticket_id  = ! empty( $provider_data['qr_ticket_id'] ) ? absint( $provider_data['qr_ticket_id'] ) : $attendee_id;
-			$unique_id     = ! empty( $provider_data['ticket_id'] ) ? sanitize_text_field( $provider_data['ticket_id'] ) : self::get_first_post_meta( $attendee_id, array( '_unique_id' ) );
+			$unique_id     = self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'unique' ) );
+			$unique_id     = '' !== $unique_id ? $unique_id : ( ! empty( $provider_data['ticket_id'] ) ? sanitize_text_field( $provider_data['ticket_id'] ) : (string) $attendee_id );
 			$ticket_meta   = self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'ticket' ) );
 			$ticket_id     = absint( $ticket_meta );
 			$qr_url        = self::get_event_tickets_qr_url( $qr_ticket_id, $event_id, $security_code );
@@ -623,6 +695,7 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			'name'     => array( '_tribe_rsvp_full_name', '_tribe_tpp_full_name', '_tribe_tickets_full_name', '_tec_tickets_commerce_full_name', '_tribe_wooticket_full_name' ),
 			'email'    => array( '_tribe_rsvp_email', '_tribe_tpp_email', '_tribe_tickets_email', '_tec_tickets_commerce_email', '_tribe_wooticket_email' ),
 			'checkin'  => array( '_tribe_rsvp_checkedin', '_tribe_tpp_checkedin', '_tec_tickets_commerce_checked_in', '_tribe_wooticket_checkedin', '_tribe_tickets_checkedin' ),
+			'unique'   => array( '_unique_id', '_tribe_tickets_attendee_id', '_tribe_tickets_ticket_unique_id' ),
 		);
 
 		return isset( $keys[ $type ] ) ? $keys[ $type ] : array();
@@ -645,7 +718,13 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			}
 		}
 
-		return sanitize_text_field( self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'security' ) ) );
+		$value = self::get_first_post_meta( $attendee_id, self::get_event_tickets_meta_keys( 'security' ) );
+
+		if ( '' !== (string) $value ) {
+			return sanitize_text_field( $value );
+		}
+
+		return sanitize_text_field( self::get_first_post_meta_by_key_fragment( $attendee_id, array( 'security_code', 'ticket_code', 'checkin_token' ) ) );
 	}
 
 	/**
@@ -833,6 +912,111 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	}
 
 	/**
+	 * Reads the first non-empty post meta value matching a key fragment.
+	 *
+	 * This is a guarded fallback for Event Tickets provider changes. Known TEC
+	 * meta keys are tried first; this only runs when those are empty.
+	 *
+	 * @param int   $post_id Post ID.
+	 * @param array $fragments Lowercase key fragments.
+	 * @return string
+	 */
+	private static function get_first_post_meta_by_key_fragment( $post_id, array $fragments ) {
+		$meta = get_post_meta( absint( $post_id ) );
+
+		if ( empty( $meta ) || ! is_array( $meta ) ) {
+			return '';
+		}
+
+		foreach ( $meta as $key => $values ) {
+			$normalized_key = strtolower( (string) $key );
+
+			foreach ( $fragments as $fragment ) {
+				if ( false === strpos( $normalized_key, strtolower( (string) $fragment ) ) ) {
+					continue;
+				}
+
+				$value = is_array( $values ) ? reset( $values ) : $values;
+				$value = maybe_unserialize( $value );
+
+				if ( is_scalar( $value ) && '' !== (string) $value ) {
+					return (string) $value;
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Gets the bridge booking ID from attendee rows or order meta.
+	 *
+	 * @param array    $booking_attendees GatiCrew attendee rows.
+	 * @param WC_Order $order WooCommerce order.
+	 * @return string
+	 */
+	private static function get_booking_id_from_attendees( array $booking_attendees, WC_Order $order ) {
+		foreach ( $booking_attendees as $attendee ) {
+			if ( ! empty( $attendee['booking_id'] ) ) {
+				$booking_id = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $attendee['booking_id'] );
+
+				if ( '' !== $booking_id ) {
+					return $booking_id;
+				}
+			}
+		}
+
+		return GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $order->get_meta( self::get_order_meta_key( 'ORDER_META_BOOKING_ID', '_gaticrew_booking_id' ), true ) );
+	}
+
+	/**
+	 * Logs TEC attendee post identity and available meta keys for QR debugging.
+	 *
+	 * @param int     $attendee_id Event Tickets attendee post ID.
+	 * @param WP_Post $attendee Event Tickets attendee post.
+	 * @return void
+	 */
+	private static function debug_event_tickets_attendee_meta( $attendee_id, WP_Post $attendee ) {
+		$meta = get_post_meta( absint( $attendee_id ) );
+
+		if ( ! is_array( $meta ) ) {
+			$meta = array();
+		}
+
+		$selected = array();
+
+		foreach ( $meta as $key => $values ) {
+			if ( preg_match( '/(security|qr|checkin|ticket|unique|event|order)/i', (string) $key ) ) {
+				$value            = is_array( $values ) ? reset( $values ) : $values;
+				$selected[ $key ] = is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '[non-scalar]';
+			}
+		}
+
+		self::debug_log(
+			'TEC attendee meta debug: ' . wp_json_encode(
+				array(
+					'attendee_id' => absint( $attendee_id ),
+					'post_type'   => sanitize_key( $attendee->post_type ),
+					'meta_keys'   => array_values( array_keys( $meta ) ),
+					'selected'    => $selected,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Writes temporary booking API diagnostics to PHP error logs.
+	 *
+	 * TODO: Remove once QR retrieval is verified on production.
+	 *
+	 * @param string $message Debug message.
+	 * @return void
+	 */
+	private static function debug_log( $message ) {
+		error_log( '[GatiCrew booking-details] ' . (string) $message ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Temporary QR retrieval diagnostics.
+	}
+
+	/**
 	 * Returns SQL placeholders for an array.
 	 *
 	 * @param array $values Values.
@@ -951,6 +1135,8 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	 */
 	private static function load_runtime_dependencies() {
 		$files = array(
+			'includes/class-gaticrew-events-bridge-bookings.php',
+			'includes/class-gaticrew-events-bridge-events.php',
 			'database/class-gaticrew-events-bridge-schema.php',
 			'roles/class-gaticrew-events-bridge-role-manager.php',
 			'qr/class-gaticrew-events-bridge-qr-tokens.php',
