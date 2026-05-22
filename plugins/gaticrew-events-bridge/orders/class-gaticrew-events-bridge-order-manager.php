@@ -681,6 +681,8 @@ final class GatiCrew_Events_Bridge_Order_Manager {
 		$order->update_meta_data( GatiCrew_Events_Bridge::ORDER_META_CUSTOMER_NAME, $this->get_customer_name( $order ) );
 		$order->update_meta_data( GatiCrew_Events_Bridge::ORDER_META_CUSTOMER_EMAIL, sanitize_email( $order->get_billing_email() ) );
 		$order->update_meta_data( GatiCrew_Events_Bridge::ORDER_META_CUSTOMER_PHONE, wc_sanitize_phone_number( $order->get_billing_phone() ) );
+		$order->update_meta_data( GatiCrew_Events_Bridge::ORDER_META_TICKET_ORDER, 'yes' );
+		$order->update_meta_data( GatiCrew_Events_Bridge::ORDER_META_ATTENDEE_COUNT, $this->get_total_linked_ticket_quantity_for_order( $order ) );
 
 		return true;
 	}
@@ -909,6 +911,22 @@ final class GatiCrew_Events_Bridge_Order_Manager {
 			if ( $event_id === absint( $booking['event_id'] ) ) {
 				$total += isset( $booking['quantity'] ) ? absint( $booking['quantity'] ) : 0;
 			}
+		}
+
+		return max( 1, $total );
+	}
+
+	/**
+	 * Totals every linked ticket quantity in an order for admin separation meta.
+	 *
+	 * @param WC_Order $order WooCommerce order object.
+	 * @return int
+	 */
+	private function get_total_linked_ticket_quantity_for_order( WC_Order $order ) {
+		$total = 0;
+
+		foreach ( $this->get_linked_event_bookings_from_order( $order ) as $booking ) {
+			$total += isset( $booking['quantity'] ) ? absint( $booking['quantity'] ) : 0;
 		}
 
 		return max( 1, $total );

@@ -163,8 +163,61 @@
 	background: #fff;
 }
 
+.gaticrew-ticket-orders-admin .subsubsub {
+	float: none;
+	margin: 8px 0 12px;
+}
+
+.gaticrew-ticket-orders-table th:nth-child(1),
+.gaticrew-ticket-orders-table th:nth-child(2),
+.gaticrew-ticket-orders-table th:nth-child(5),
+.gaticrew-ticket-orders-table th:nth-child(6),
+.gaticrew-ticket-orders-table th:nth-child(7),
+.gaticrew-ticket-orders-table th:nth-child(8),
+.gaticrew-ticket-orders-table th:nth-child(9) {
+	width: 120px;
+}
+
+.gaticrew-ticket-order-details {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 18px;
+	max-width: 1180px;
+}
+
+.gaticrew-ticket-order-details__panel {
+	padding: 18px;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
+.gaticrew-ticket-order-details__panel h2 {
+	margin-top: 0;
+}
+
+.gaticrew-ticket-order-details__panel th {
+	width: 170px;
+}
+
+.gaticrew-ticket-order-details__panel--wide {
+	grid-column: 1 / -1;
+}
+
+.gaticrew-ticket-order-qr-thumb {
+	display: block;
+	width: 72px;
+	height: 72px;
+	margin-top: 8px;
+	border: 1px solid #dcdcde;
+	background: #fff;
+}
+
 @media (max-width: 782px) {
 	.gaticrew-attendee-details__grid {
+		grid-template-columns: 1fr;
+	}
+
+	.gaticrew-ticket-order-details {
 		grid-template-columns: 1fr;
 	}
 }

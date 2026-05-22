@@ -51,15 +51,26 @@ final class GatiCrew_Events_Bridge_Attendees_Admin {
 	 * @return void
 	 */
 	public function register_menu() {
-		$this->screen_hook = add_menu_page(
-			__( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
-			__( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
-			GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_ATTENDEES,
-			self::MENU_SLUG,
-			array( $this, 'render_page' ),
-			'dashicons-tickets-alt',
-			56
-		);
+		if ( class_exists( 'GatiCrew_Events_Bridge_Ticket_Orders_Admin' ) ) {
+			$this->screen_hook = add_submenu_page(
+				GatiCrew_Events_Bridge_Ticket_Orders_Admin::PARENT_MENU_SLUG,
+				__( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
+				__( 'Attendees', 'gaticrew-events-bridge' ),
+				GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_ATTENDEES,
+				self::MENU_SLUG,
+				array( $this, 'render_page' )
+			);
+		} else {
+			$this->screen_hook = add_menu_page(
+				__( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
+				__( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
+				GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_ATTENDEES,
+				self::MENU_SLUG,
+				array( $this, 'render_page' ),
+				'dashicons-tickets-alt',
+				56
+			);
+		}
 
 		add_action( 'load-' . $this->screen_hook, array( $this, 'add_screen_options' ) );
 	}
@@ -105,7 +116,7 @@ final class GatiCrew_Events_Bridge_Attendees_Admin {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		if ( 'toplevel_page_' . self::MENU_SLUG !== $hook_suffix ) {
+		if ( $hook_suffix !== $this->screen_hook && 'toplevel_page_' . self::MENU_SLUG !== $hook_suffix ) {
 			return;
 		}
 

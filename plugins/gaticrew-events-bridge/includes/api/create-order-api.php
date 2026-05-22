@@ -570,6 +570,7 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 
 		$item->update_meta_data( '_gaticrew_booking_id', $payload['booking_id'] );
 		$item->update_meta_data( '_gaticrew_attendee_names', self::get_attendee_names( $payload['attendees'] ) );
+		$item->update_meta_data( '_gaticrew_ticket_order', 'yes' );
 		$item->save();
 
 		$name_parts = self::split_customer_name( $payload['customer_name'] );
@@ -587,6 +588,8 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 		$order->update_meta_data( self::get_order_meta_key( 'ORDER_META_CUSTOMER_EMAIL', '_gaticrew_customer_email' ), $payload['customer_email'] );
 		$order->update_meta_data( self::get_order_meta_key( 'ORDER_META_CUSTOMER_PHONE', '_gaticrew_customer_phone' ), $payload['customer_phone'] );
 		$order->update_meta_data( self::get_order_meta_key( 'ORDER_META_ATTENDEE_NAMES', '_gaticrew_attendee_names' ), self::get_attendee_names( $payload['attendees'] ) );
+		$order->update_meta_data( self::get_order_meta_key( 'ORDER_META_TICKET_ORDER', '_gaticrew_ticket_order' ), 'yes' );
+		$order->update_meta_data( self::get_order_meta_key( 'ORDER_META_ATTENDEE_COUNT', '_gaticrew_attendee_count' ), absint( $payload['quantity'] ) );
 		$order->update_meta_data( '_gaticrew_quantity', absint( $payload['quantity'] ) );
 		$order->calculate_totals();
 		$order->set_status( 'pending' );

@@ -26,6 +26,7 @@ require_once GATICREW_EVENTS_BRIDGE_PATH . 'checkin/class-gaticrew-events-bridge
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'pdf/class-gaticrew-events-bridge-pdf-tickets.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'orders/class-gaticrew-events-bridge-order-manager.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-admin.php';
+require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-ticket-orders-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'admin/class-gaticrew-events-bridge-attendees-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'scanner/class-gaticrew-events-bridge-scanner-admin.php';
 require_once GATICREW_EVENTS_BRIDGE_PATH . 'api/class-gaticrew-events-bridge-checkin-rest-controller.php';
@@ -48,6 +49,8 @@ final class GatiCrew_Events_Bridge {
 	const ORDER_META_CUSTOMER_EMAIL = '_gaticrew_customer_email';
 	const ORDER_META_CUSTOMER_PHONE = '_gaticrew_customer_phone';
 	const ORDER_META_ATTENDEE_NAMES = '_gaticrew_attendee_names';
+	const ORDER_META_TICKET_ORDER   = '_gaticrew_ticket_order';
+	const ORDER_META_ATTENDEE_COUNT = '_gaticrew_attendee_count';
 
 	/**
 	 * Singleton instance.
@@ -76,6 +79,13 @@ final class GatiCrew_Events_Bridge {
 	 * @var GatiCrew_Events_Bridge_Order_Manager
 	 */
 	private $order_manager;
+
+	/**
+	 * Ticket order admin module.
+	 *
+	 * @var GatiCrew_Events_Bridge_Ticket_Orders_Admin
+	 */
+	private $ticket_orders_admin;
 
 	/**
 	 * Attendee admin module.
@@ -147,6 +157,7 @@ final class GatiCrew_Events_Bridge {
 		$this->admin                   = new GatiCrew_Events_Bridge_Admin();
 		$this->checkin_rest_controller = new GatiCrew_Events_Bridge_Checkin_REST_Controller();
 		$this->order_manager           = new GatiCrew_Events_Bridge_Order_Manager();
+		$this->ticket_orders_admin     = new GatiCrew_Events_Bridge_Ticket_Orders_Admin();
 		$this->attendees_admin         = new GatiCrew_Events_Bridge_Attendees_Admin();
 		$this->scanner_admin           = new GatiCrew_Events_Bridge_Scanner_Admin();
 		$this->qr_controller           = new GatiCrew_Events_Bridge_QR_Controller();
@@ -157,6 +168,7 @@ final class GatiCrew_Events_Bridge {
 		$this->admin->init();
 		$this->checkin_rest_controller->init();
 		$this->order_manager->init();
+		$this->ticket_orders_admin->init();
 		$this->attendees_admin->init();
 		$this->scanner_admin->init();
 		$this->qr_controller->init();

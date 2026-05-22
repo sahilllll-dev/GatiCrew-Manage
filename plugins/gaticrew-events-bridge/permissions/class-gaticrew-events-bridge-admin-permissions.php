@@ -224,6 +224,10 @@ final class GatiCrew_Events_Bridge_Admin_Permissions {
 				'url'   => admin_url( 'admin.php?page=wc-orders' ),
 			),
 			array(
+				'label' => __( 'Ticket Orders', 'gaticrew-events-bridge' ),
+				'url'   => admin_url( 'admin.php?page=' . GatiCrew_Events_Bridge_Ticket_Orders_Admin::MENU_SLUG ),
+			),
+			array(
 				'label' => __( 'GatiCrew Attendees', 'gaticrew-events-bridge' ),
 				'url'   => admin_url( 'admin.php?page=' . GatiCrew_Events_Bridge_Attendees_Admin::MENU_SLUG ),
 			),
@@ -262,6 +266,8 @@ final class GatiCrew_Events_Bridge_Admin_Permissions {
 			'edit.php?post_type=shop_order',
 			'wc-orders',
 			'woocommerce',
+			GatiCrew_Events_Bridge_Ticket_Orders_Admin::PARENT_MENU_SLUG,
+			GatiCrew_Events_Bridge_Ticket_Orders_Admin::MENU_SLUG,
 			GatiCrew_Events_Bridge_Attendees_Admin::MENU_SLUG,
 			GatiCrew_Events_Bridge_Scanner_Admin::MENU_SLUG,
 			'gaticrew-check-in',
@@ -284,6 +290,18 @@ final class GatiCrew_Events_Bridge_Admin_Permissions {
 
 		if ( 'woocommerce' === $parent_slug ) {
 			return $this->is_orders_admin_slug( $slug );
+		}
+
+		if ( GatiCrew_Events_Bridge_Ticket_Orders_Admin::PARENT_MENU_SLUG === $parent_slug ) {
+			return in_array(
+				$slug,
+				array(
+					GatiCrew_Events_Bridge_Ticket_Orders_Admin::MENU_SLUG,
+					GatiCrew_Events_Bridge_Attendees_Admin::MENU_SLUG,
+					GatiCrew_Events_Bridge_Scanner_Admin::MENU_SLUG,
+				),
+				true
+			);
 		}
 
 		if ( 'edit.php?post_type=product' === $parent_slug ) {
@@ -380,6 +398,10 @@ final class GatiCrew_Events_Bridge_Admin_Permissions {
 	private function is_allowed_admin_page( $page, $post_type = '' ) {
 		if ( '' === $page ) {
 			return false;
+		}
+
+		if ( in_array( $page, array( GatiCrew_Events_Bridge_Ticket_Orders_Admin::PARENT_MENU_SLUG, GatiCrew_Events_Bridge_Ticket_Orders_Admin::MENU_SLUG ), true ) ) {
+			return current_user_can( GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_ATTENDEES );
 		}
 
 		if ( GatiCrew_Events_Bridge_Attendees_Admin::MENU_SLUG === $page ) {

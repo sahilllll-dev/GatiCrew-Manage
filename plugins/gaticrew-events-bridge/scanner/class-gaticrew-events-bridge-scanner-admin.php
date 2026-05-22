@@ -24,6 +24,13 @@ final class GatiCrew_Events_Bridge_Scanner_Admin {
 	private $repository;
 
 	/**
+	 * Screen hook suffix.
+	 *
+	 * @var string
+	 */
+	private $screen_hook = '';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -46,15 +53,26 @@ final class GatiCrew_Events_Bridge_Scanner_Admin {
 	 * @return void
 	 */
 	public function register_menu() {
-		add_menu_page(
-			__( 'GatiCrew Check-In', 'gaticrew-events-bridge' ),
-			__( 'GatiCrew Check-In', 'gaticrew-events-bridge' ),
-			GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_CHECKINS,
-			self::MENU_SLUG,
-			array( $this, 'render_page' ),
-			'dashicons-visibility',
-			57
-		);
+		if ( class_exists( 'GatiCrew_Events_Bridge_Ticket_Orders_Admin' ) ) {
+			$this->screen_hook = add_submenu_page(
+				GatiCrew_Events_Bridge_Ticket_Orders_Admin::PARENT_MENU_SLUG,
+				__( 'GatiCrew Check-In', 'gaticrew-events-bridge' ),
+				__( 'Check-In', 'gaticrew-events-bridge' ),
+				GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_CHECKINS,
+				self::MENU_SLUG,
+				array( $this, 'render_page' )
+			);
+		} else {
+			$this->screen_hook = add_menu_page(
+				__( 'GatiCrew Check-In', 'gaticrew-events-bridge' ),
+				__( 'GatiCrew Check-In', 'gaticrew-events-bridge' ),
+				GatiCrew_Events_Bridge_Role_Manager::CAP_MANAGE_CHECKINS,
+				self::MENU_SLUG,
+				array( $this, 'render_page' ),
+				'dashicons-visibility',
+				57
+			);
+		}
 	}
 
 	/**
@@ -64,7 +82,7 @@ final class GatiCrew_Events_Bridge_Scanner_Admin {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		if ( 'toplevel_page_' . self::MENU_SLUG !== $hook_suffix ) {
+		if ( $hook_suffix !== $this->screen_hook && 'toplevel_page_' . self::MENU_SLUG !== $hook_suffix ) {
 			return;
 		}
 
