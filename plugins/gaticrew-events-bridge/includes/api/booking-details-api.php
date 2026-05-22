@@ -403,21 +403,54 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	 */
 	private static function get_event_tickets_attendees( WC_Order $order, $event_id, array $booking_attendees ) {
 		$booking_id = self::get_booking_id_from_attendees( $booking_attendees, $order );
+		$order_id   = absint( $order->get_id() );
 		$ids        = array();
 
+		self::debug_log(
+			'Lookup start: ' . wp_json_encode(
+				array(
+					'booking_id' => $booking_id,
+					'woo_order'  => $order_id,
+					'event_id'   => absint( $event_id ),
+					'products'   => self::get_order_product_ids( $order ),
+				)
+			)
+		);
+
 		if ( '' !== $booking_id ) {
-			$ids = self::get_event_tickets_attendee_ids_by_booking( $booking_id, absint( $event_id ) );
+			$ids = array_merge(
+				$ids,
+				self::get_event_tickets_attendee_ids_by_booking( $booking_id, absint( $event_id ) ),
+				self::get_event_tickets_attendee_ids_by_booking_like_meta( $booking_id, absint( $event_id ) )
+			);
 		}
 
-		if ( empty( $ids ) ) {
-			$ids = self::get_event_tickets_attendee_ids_by_order( absint( $order->get_id() ), absint( $event_id ) );
+		$ids = array_merge(
+			$ids,
+			self::get_event_tickets_attendee_ids_by_order( $order_id, absint( $event_id ) ),
+			self::get_event_tickets_attendee_ids_by_order_like_meta( $order_id, absint( $event_id ) ),
+			self::get_event_tickets_attendee_ids_by_order_parent( $order_id, absint( $event_id ) )
+		);
+
+		if ( $event_id ) {
+			$ids = array_merge(
+				$ids,
+				self::get_event_tickets_attendee_ids_by_event_and_identity( absint( $event_id ), $booking_attendees, $order )
+			);
 		}
 
-		if ( empty( $ids ) && $event_id ) {
-			$ids = self::get_event_tickets_attendee_ids_by_event_and_identity( absint( $event_id ), $booking_attendees, $order );
+		$product_ids = self::get_order_product_ids( $order );
+
+		if ( ! empty( $product_ids ) ) {
+			$ids = array_merge(
+				$ids,
+				self::get_event_tickets_attendee_ids_by_product_and_identity( $product_ids, absint( $event_id ), $booking_attendees )
+			);
 		}
 
-		self::debug_log( 'Resolved Event Tickets attendee IDs for booking ' . $booking_id . ': ' . wp_json_encode( array_values( array_unique( array_map( 'absint', $ids ) ) ) ) );
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $ids ) ) ) );
+		self::debug_log( 'Resolved Event Tickets attendee IDs for booking ' . $booking_id . ': ' . wp_json_encode( $ids ) );
+		self::debug_event_tickets_candidate_posts( 'final', $ids );
 
 		return self::normalize_event_tickets_attendees( $ids );
 	}
@@ -475,7 +508,65 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		);
 		$params = array_merge( $params, $post_types );
 
-		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'booking_exact', $ids );
+
+		return $ids;
+	}
+
+	/**
+	 * Finds Event Tickets attendees by any booking-like meta key.
+	 *
+	 * @param string $booking_id GatiCrew booking ID.
+	 * @param int    $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_booking_like_meta( $booking_id, $event_id ) {
+		global $wpdb;
+
+		$booking_id = GatiCrew_Events_Bridge_Bookings::sanitize_booking_id( $booking_id );
+
+		if ( '' === $booking_id ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array( $booking_id );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} booking_pm
+				ON booking_pm.post_id = p.ID
+				AND booking_pm.meta_value = %s
+				AND (
+					booking_pm.meta_key LIKE '%booking%'
+					OR booking_pm.meta_key LIKE '%reservation%'
+					OR booking_pm.meta_key LIKE '%confirmation%'
+				)
+		";
+
+		if ( $event_id ) {
+			$sql    .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params = array_merge( $params, $post_types );
+
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'booking_like_meta', $ids );
+
+		return $ids;
 	}
 
 	/**
@@ -524,7 +615,113 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		";
 		$params = array_merge( $params, $post_types );
 
-		return array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'order_exact_meta', $ids );
+
+		return $ids;
+	}
+
+	/**
+	 * Finds Event Tickets attendees by any order-like meta key.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @param int $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_order_like_meta( $order_id, $event_id ) {
+		global $wpdb;
+
+		$order_id = absint( $order_id );
+
+		if ( ! $order_id ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array( (string) $order_id );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} order_pm
+				ON order_pm.post_id = p.ID
+				AND order_pm.meta_value = %s
+				AND (
+					order_pm.meta_key LIKE '%order%'
+					OR order_pm.meta_key LIKE '%woo%'
+					OR order_pm.meta_key LIKE '%gateway%'
+				)
+		";
+
+		if ( $event_id ) {
+			$sql    .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params = array_merge( $params, $post_types );
+
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'order_like_meta', $ids );
+
+		return $ids;
+	}
+
+	/**
+	 * Finds Event Tickets attendees whose post parent is the Woo order.
+	 *
+	 * @param int $order_id WooCommerce order ID.
+	 * @param int $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_order_parent( $order_id, $event_id ) {
+		global $wpdb;
+
+		$order_id = absint( $order_id );
+
+		if ( ! $order_id ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array();
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+		";
+
+		if ( $event_id ) {
+			$sql    .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_parent = %d
+				AND p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params = array_merge( $params, array( $order_id ), $post_types );
+
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'order_parent', $ids );
+
+		return $ids;
 	}
 
 	/**
@@ -540,25 +737,38 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 
 		$post_types = self::get_event_tickets_attendee_post_types();
 		$event_keys = self::get_event_tickets_meta_keys( 'event' );
-		$params     = array_merge( $event_keys, array( (string) absint( $event_id ) ) );
+		$params     = array_merge( $event_keys, array( (string) absint( $event_id ), (string) absint( $event_id ) ) );
 		$sql        = "
 			SELECT DISTINCT p.ID
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->postmeta} event_pm
 				ON event_pm.post_id = p.ID
-				AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
-				AND event_pm.meta_value = %s
+				AND (
+					(
+						event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+						AND event_pm.meta_value = %s
+					)
+					OR (
+						event_pm.meta_value = %s
+						AND (
+							event_pm.meta_key LIKE '%event%'
+							OR event_pm.meta_key LIKE '%post%'
+						)
+					)
+				)
 			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
 				AND p.post_status <> 'trash'
 			ORDER BY p.ID ASC
 		";
 		$params     = array_merge( $params, $post_types );
-		$candidates = self::normalize_event_tickets_attendees( array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$ids        = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'event_identity_candidates', $ids );
+		$candidates = self::normalize_event_tickets_attendees( $ids );
 		$matched    = array();
 		$used       = array();
 
 		foreach ( $booking_attendees as $index => $booking_attendee ) {
-			$real_attendee = self::match_event_tickets_attendee( $booking_attendee, $candidates, $used, $index );
+			$real_attendee = self::match_event_tickets_attendee( $booking_attendee, $candidates, $used, $index, false );
 
 			if ( ! empty( $real_attendee['attendee_id'] ) ) {
 				$matched[] = absint( $real_attendee['attendee_id'] );
@@ -566,6 +776,173 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 		}
 
 		return $matched;
+	}
+
+	/**
+	 * Returns product and variation IDs from the Woo order.
+	 *
+	 * @param WC_Order $order WooCommerce order.
+	 * @return array
+	 */
+	private static function get_order_product_ids( WC_Order $order ) {
+		$product_ids = array();
+
+		foreach ( $order->get_items( 'line_item' ) as $item ) {
+			if ( ! $item instanceof WC_Order_Item_Product ) {
+				continue;
+			}
+
+			$product_ids[] = absint( $item->get_product_id() );
+
+			if ( $item->get_variation_id() ) {
+				$product_ids[] = absint( $item->get_variation_id() );
+			}
+		}
+
+		return array_values( array_unique( array_filter( $product_ids ) ) );
+	}
+
+	/**
+	 * Finds Event Tickets attendees by order product/ticket relation and then
+	 * narrows the result to this booking's attendee identities.
+	 *
+	 * Event Tickets Commerce stores attendee ticket IDs as TEC ticket posts
+	 * rather than Woo product IDs, while Event Tickets Plus may store Woo
+	 * product IDs. This method checks both sources and only returns official
+	 * attendee posts.
+	 *
+	 * @param array    $product_ids Woo product IDs on the order.
+	 * @param int      $event_id Event post ID.
+	 * @param array    $booking_attendees GatiCrew attendee rows.
+	 * @return array
+	 */
+	private static function get_event_tickets_attendee_ids_by_product_and_identity( array $product_ids, $event_id, array $booking_attendees ) {
+		global $wpdb;
+
+		$product_ids = array_values( array_unique( array_filter( array_map( 'absint', $product_ids ) ) ) );
+		$ticket_ids  = self::get_event_ticket_ids_for_event( $event_id );
+		$lookup_ids  = array_values( array_unique( array_filter( array_merge( $product_ids, $ticket_ids ) ) ) );
+
+		if ( empty( $lookup_ids ) ) {
+			return array();
+		}
+
+		$post_types = self::get_event_tickets_attendee_post_types();
+		$ticket_keys = self::get_event_tickets_meta_keys( 'ticket' );
+		$event_keys = self::get_event_tickets_meta_keys( 'event' );
+		$params     = array_merge( $ticket_keys, array_map( 'strval', $lookup_ids ) );
+		$sql        = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} ticket_pm
+				ON ticket_pm.post_id = p.ID
+				AND ticket_pm.meta_key IN (" . self::get_placeholders( $ticket_keys ) . ")
+				AND ticket_pm.meta_value IN (" . self::get_placeholders( $lookup_ids ) . ")
+		";
+
+		if ( $event_id ) {
+			$sql    .= "
+				INNER JOIN {$wpdb->postmeta} event_pm
+					ON event_pm.post_id = p.ID
+					AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+					AND event_pm.meta_value = %s
+			";
+			$params = array_merge( $params, $event_keys, array( (string) absint( $event_id ) ) );
+		}
+
+		$sql .= "
+			WHERE p.post_type IN (" . self::get_placeholders( $post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+		$params = array_merge( $params, $post_types );
+		$ids    = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_event_tickets_candidate_posts( 'product_identity_candidates', $ids );
+
+		$candidates = self::normalize_event_tickets_attendees( $ids );
+		$matched    = array();
+		$used       = array();
+
+		foreach ( $booking_attendees as $index => $booking_attendee ) {
+			$real_attendee = self::match_event_tickets_attendee( $booking_attendee, $candidates, $used, $index, false );
+
+			if ( ! empty( $real_attendee['attendee_id'] ) ) {
+				$matched[] = absint( $real_attendee['attendee_id'] );
+			}
+		}
+
+		return $matched;
+	}
+
+	/**
+	 * Returns official Event Tickets ticket post IDs attached to an event.
+	 *
+	 * @param int $event_id Event post ID.
+	 * @return array
+	 */
+	private static function get_event_ticket_ids_for_event( $event_id ) {
+		global $wpdb;
+
+		$event_id = absint( $event_id );
+
+		if ( ! $event_id ) {
+			return array();
+		}
+
+		$ticket_post_types = self::get_event_tickets_ticket_post_types();
+		$event_keys        = self::get_event_ticket_event_meta_keys();
+		$params            = array_merge( $event_keys, array( (string) $event_id ), $ticket_post_types );
+		$sql               = "
+			SELECT DISTINCT p.ID
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} event_pm
+				ON event_pm.post_id = p.ID
+				AND event_pm.meta_key IN (" . self::get_placeholders( $event_keys ) . ")
+				AND event_pm.meta_value = %s
+			WHERE p.post_type IN (" . self::get_placeholders( $ticket_post_types ) . ")
+				AND p.post_status <> 'trash'
+			ORDER BY p.ID ASC
+		";
+
+		$ids = array_map( 'absint', $wpdb->get_col( $wpdb->prepare( $sql, $params ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		self::debug_log( 'Event ticket IDs for event ' . $event_id . ': ' . wp_json_encode( $ids ) );
+
+		return $ids;
+	}
+
+	/**
+	 * Returns Event Tickets ticket post types across supported providers.
+	 *
+	 * @return array
+	 */
+	private static function get_event_tickets_ticket_post_types() {
+		return array(
+			'tec_tc_ticket',
+			'tribe_rsvp_tickets',
+			'tribe_tpp_tickets',
+			'product',
+		);
+	}
+
+	/**
+	 * Returns event relation meta keys used by ticket posts.
+	 *
+	 * @return array
+	 */
+	private static function get_event_ticket_event_meta_keys() {
+		return array_values(
+			array_unique(
+				array_merge(
+					self::get_event_tickets_meta_keys( 'event' ),
+					array(
+						'_tribe_wooticket_for_event',
+						'_tribe_ticket_event',
+						'_tribe_rsvp_for_event',
+						'_tribe_tpp_for_event',
+					)
+				)
+			)
+		);
 	}
 
 	/**
@@ -621,9 +998,10 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 	 * @param array $event_tickets_attendees Event Tickets attendees.
 	 * @param array $used Used Event Tickets attendee IDs.
 	 * @param int   $index Current attendee index.
+	 * @param bool  $allow_index_fallback Whether positional fallback is allowed.
 	 * @return array
 	 */
-	private static function match_event_tickets_attendee( array $booking_attendee, array $event_tickets_attendees, array &$used, $index = 0 ) {
+	private static function match_event_tickets_attendee( array $booking_attendee, array $event_tickets_attendees, array &$used, $index = 0, $allow_index_fallback = true ) {
 		if ( empty( $event_tickets_attendees ) ) {
 			return array();
 		}
@@ -654,7 +1032,7 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 			}
 		}
 
-		if ( isset( $event_tickets_attendees[ $index ] ) ) {
+		if ( $allow_index_fallback && isset( $event_tickets_attendees[ $index ] ) ) {
 			$real_id = absint( $event_tickets_attendees[ $index ]['attendee_id'] );
 
 			if ( $real_id && ! in_array( $real_id, $used, true ) ) {
@@ -999,6 +1377,56 @@ final class GatiCrew_Events_Bridge_Booking_Details_API {
 					'post_type'   => sanitize_key( $attendee->post_type ),
 					'meta_keys'   => array_values( array_keys( $meta ) ),
 					'selected'    => $selected,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Logs candidate attendee posts found by each lookup strategy.
+	 *
+	 * @param string $label Lookup strategy label.
+	 * @param array  $ids Candidate post IDs.
+	 * @return void
+	 */
+	private static function debug_event_tickets_candidate_posts( $label, array $ids ) {
+		$posts = array();
+
+		foreach ( array_unique( array_map( 'absint', $ids ) ) as $id ) {
+			$post = get_post( $id );
+
+			if ( ! $post instanceof WP_Post ) {
+				continue;
+			}
+
+			$selected_meta = array();
+			$meta          = get_post_meta( $id );
+
+			if ( is_array( $meta ) ) {
+				foreach ( $meta as $key => $values ) {
+					if ( ! preg_match( '/(booking|security|qr|checkin|ticket|unique|event|order|woo)/i', (string) $key ) ) {
+						continue;
+					}
+
+					$value                 = is_array( $values ) ? reset( $values ) : $values;
+					$selected_meta[ $key ] = is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '[non-scalar]';
+				}
+			}
+
+			$posts[] = array(
+				'id'          => $id,
+				'post_type'   => sanitize_key( $post->post_type ),
+				'post_parent' => absint( $post->post_parent ),
+				'post_title'  => sanitize_text_field( $post->post_title ),
+				'meta'        => $selected_meta,
+			);
+		}
+
+		self::debug_log(
+			'TEC attendee candidates [' . sanitize_key( $label ) . ']: ' . wp_json_encode(
+				array(
+					'count' => count( $posts ),
+					'posts' => $posts,
 				)
 			)
 		);
