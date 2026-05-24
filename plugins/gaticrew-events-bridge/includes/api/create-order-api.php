@@ -28,14 +28,9 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	const ALLOWED_ORIGIN = 'https://gaticrew.com';
 
 	/**
-	 * Razorpay config names.
-	 *
-	 * Define these in wp-config.php or as environment variables:
-	 * define( 'RAZORPAY_KEY_ID', 'rzp_...' );
-	 * define( 'RAZORPAY_KEY_SECRET', '...' );
+	 * WooCommerce Razorpay gateway settings option.
 	 */
-	const RAZORPAY_KEY_ID_CONFIG     = 'RAZORPAY_KEY_ID';
-	const RAZORPAY_KEY_SECRET_CONFIG = 'RAZORPAY_KEY_SECRET';
+	const RAZORPAY_SETTINGS_OPTION = 'woocommerce_razorpay_settings';
 
 	/**
 	 * Registers hooks.
@@ -164,21 +159,26 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			}
 
 			$razorpay_credentials = self::get_razorpay_credentials();
-			$order                = self::build_order( $payload, $event_id, $product );
-			$razorpay_order       = false;
 
 			if ( false === $razorpay_credentials ) {
-				self::debug_log( 'Razorpay skipped — direct booking mode' );
-			} else {
-				$razorpay_order = self::create_razorpay_order( $order, $razorpay_credentials );
-
-				if ( is_wp_error( $razorpay_order ) ) {
-					return $razorpay_order;
-				}
-
-				$order->update_meta_data( '_gaticrew_razorpay_order_id', $razorpay_order['order_id'] );
-				$order->save();
+				self::debug_log( 'Razorpay WooCommerce gateway credentials missing or invalid.' );
+				return self::error_response(
+					'razorpay_credentials_missing',
+					__( 'Razorpay gateway credentials are not configured.', 'gaticrew-events-bridge' ),
+					array( 'razorpay' => __( 'Configure the WooCommerce Razorpay gateway public key and secret key.', 'gaticrew-events-bridge' ) ),
+					503
+				);
 			}
+
+			$order          = self::build_order( $payload, $event_id, $product );
+			$razorpay_order = self::create_razorpay_order( $order, $razorpay_credentials );
+
+			if ( is_wp_error( $razorpay_order ) ) {
+				return $razorpay_order;
+			}
+
+			$order->update_meta_data( '_gaticrew_razorpay_order_id', $razorpay_order['razorpay_order_id'] );
+			$order->save();
 
 			self::create_attendee_rows( $order, $payload, $event_id, $product_id );
 			self::sync_event_tickets_attendees( $order );
@@ -187,22 +187,14 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			self::debug_log( 'Create-order completed. Order ID: ' . absint( $order->get_id() ) . ' Booking ID: ' . $booking_id );
 
 			$response_data = array(
-				'success'      => true,
-				'payment_mode' => false === $razorpay_order ? 'direct_booking' : 'razorpay',
-				'order_id'     => absint( $order->get_id() ),
-				'booking_id'   => $booking_id,
-				'amount'       => (float) wc_format_decimal( $order->get_total(), wc_get_price_decimals() ),
-				'currency'     => false === $razorpay_order ? get_woocommerce_currency() : $razorpay_order['currency'],
+				'success'            => true,
+				'booking_id'         => $booking_id,
+				'order_id'           => absint( $order->get_id() ),
+				'razorpay_key'       => $razorpay_order['razorpay_key'],
+				'razorpay_order_id'  => $razorpay_order['razorpay_order_id'],
+				'amount'             => absint( $razorpay_order['amount'] ),
+				'currency'           => $razorpay_order['currency'],
 			);
-
-			if ( false !== $razorpay_order ) {
-				$response_data['razorpay'] = array(
-					'key'      => $razorpay_order['key'],
-					'order_id' => $razorpay_order['order_id'],
-					'amount'   => absint( $razorpay_order['amount'] ),
-					'currency' => $razorpay_order['currency'],
-				);
-			}
 
 			$response = new WP_REST_Response( $response_data, 200 );
 
@@ -267,15 +259,21 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	}
 
 	/**
-	 * Reads Razorpay credentials from wp-config.php constants or environment.
+	 * Reads Razorpay credentials from the WooCommerce Razorpay gateway settings.
 	 *
 	 * @return array|false
 	 */
 	private static function get_razorpay_credentials() {
-		$key_id     = self::get_razorpay_config_value( self::RAZORPAY_KEY_ID_CONFIG );
-		$key_secret = self::get_razorpay_config_value( self::RAZORPAY_KEY_SECRET_CONFIG );
+		$settings = get_option( self::RAZORPAY_SETTINGS_OPTION, array() );
 
-		if ( '' === $key_id || '' === $key_secret ) {
+		if ( ! is_array( $settings ) ) {
+			return false;
+		}
+
+		$key_id     = isset( $settings['key_id'] ) ? sanitize_text_field( wp_unslash( $settings['key_id'] ) ) : '';
+		$key_secret = isset( $settings['key_secret'] ) ? sanitize_text_field( wp_unslash( $settings['key_secret'] ) ) : '';
+
+		if ( '' === $key_secret || ! self::is_razorpay_public_key( $key_id ) ) {
 			return false;
 		}
 
@@ -283,6 +281,16 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 			'key_id'     => $key_id,
 			'key_secret' => $key_secret,
 		);
+	}
+
+	/**
+	 * Confirms the configured value is a Razorpay public key ID.
+	 *
+	 * @param string $key_id Razorpay key ID.
+	 * @return bool
+	 */
+	private static function is_razorpay_public_key( $key_id ) {
+		return 1 === preg_match( '/^rzp_(test|live)_[A-Za-z0-9]+$/', (string) $key_id );
 	}
 
 	/**
@@ -375,24 +383,6 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	}
 
 	/**
-	 * Returns Razorpay config from constants or environment variables.
-	 *
-	 * @param string $name Config key name.
-	 * @return string
-	 */
-	private static function get_razorpay_config_value( $name ) {
-		$name = preg_replace( '/[^A-Z0-9_]/', '', strtoupper( (string) $name ) );
-
-		if ( defined( $name ) ) {
-			return sanitize_text_field( (string) constant( $name ) );
-		}
-
-		$value = getenv( $name );
-
-		return false !== $value ? sanitize_text_field( (string) $value ) : '';
-	}
-
-	/**
 	 * Loads Composer autoload so a future Razorpay SDK install is detected.
 	 *
 	 * @return bool
@@ -441,10 +431,10 @@ final class GatiCrew_Events_Bridge_Create_Order_API {
 	 */
 	private static function prepare_razorpay_response_data( array $data, array $payload, $key_id ) {
 		return array(
-			'key'      => sanitize_text_field( $key_id ),
-			'order_id' => sanitize_text_field( $data['id'] ),
-			'amount'   => isset( $data['amount'] ) ? absint( $data['amount'] ) : absint( $payload['amount'] ),
-			'currency' => isset( $data['currency'] ) ? sanitize_text_field( $data['currency'] ) : sanitize_text_field( $payload['currency'] ),
+			'razorpay_key'      => sanitize_text_field( $key_id ),
+			'razorpay_order_id' => sanitize_text_field( $data['id'] ),
+			'amount'            => isset( $data['amount'] ) ? absint( $data['amount'] ) : absint( $payload['amount'] ),
+			'currency'          => isset( $data['currency'] ) ? sanitize_text_field( $data['currency'] ) : sanitize_text_field( $payload['currency'] ),
 		);
 	}
 
